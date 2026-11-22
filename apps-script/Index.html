@@ -74,7 +74,7 @@ button:disabled{opacity:.5;cursor:wait}
       <div class="grid">
         <label class="full"><span class="req">イベント名</span><input name="イベント名" maxlength="100" placeholder="PROFLUX CUP 01"><span class="hint">「イベント名未定」のあいだは Discord の告知は出ません</span></label>
         <label>種類<select name="種類"><option>メイン</option><option>小規模</option><option>Nexus Server</option></select></label>
-        <label>ゲーム<input name="ゲーム" list="games" placeholder="VALORANT"></label>
+        <label>ゲーム<input name="ゲーム" list="games" placeholder="例：VALORANT、ストリートファイター6"><span class="hint">候補から選ぶか、リストにないゲームはそのまま入力できます</span></label>
         <label class="check"><input type="checkbox" name="確定" value="済">内容が確定した（「確定前」の表示が消えます）</label>
       </div>
     </fieldset>
@@ -182,6 +182,10 @@ async function load(selectRow) {
     pick.length = 1;
     for (const e of events) pick.add(new Option(label(e), e.row));
     pick.value = selectRow ? String(selectRow) : '';
+    const games = new Set(['VALORANT', 'OW2', 'Apex', 'Minecraft', '複数タイトル']);
+    for (const e of events) if (e['ゲーム']) games.add(e['ゲーム']);
+    $('#games').innerHTML = '';
+    for (const g of games) $('#games').append(new Option(g));
     fill(events.find((e) => e.row === +pick.value) || null);
     msg('');
   } catch (err) { msg(err.message, 'ng'); }
