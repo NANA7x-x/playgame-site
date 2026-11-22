@@ -140,7 +140,7 @@ const msg = (t, cls) => {
 };
 const busy = (on) => { $('#save').disabled = $('#del').disabled = on; };
 
-// シートの表示（2027/01/23 や 2027-01-23、20:00:00）を入力欄の形にそろえる
+/* シートの表示（2027/01/23 や 2027-01-23、20:00:00）を入力欄の形にそろえる */
 const toDate = (v) => { const m = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(v || ''); return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; };
 const toMonth = (v) => { const m = /(\d{4})\D(\d{1,2})/.exec(v || ''); return m ? `${m[1]}-${m[2].padStart(2, '0')}` : ''; };
 const toTime = (v) => { const m = /(\d{1,2}):(\d{2})/.exec(v || ''); return m ? `${m[1].padStart(2, '0')}:${m[2]}` : ''; };
@@ -187,7 +187,7 @@ const syncMonth = () => { const d = form.elements['日付'].value; if (d) form.e
 form.elements['日付'].addEventListener('change', syncMonth);
 form.elements['日付'].addEventListener('input', syncMonth);
 
-// Enter キーなどでページが読み込み直されないよう、フォームの送信は使わずボタンで保存する
+/* Enter キーなどでページが読み込み直されないよう、フォームの送信は使わずボタンで保存する */
 form.addEventListener('submit', (ev) => { ev.preventDefault(); save(); });
 $('#save').addEventListener('click', save);
 let saving = false;
@@ -210,8 +210,8 @@ async function save() {
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
   if (!data['日付'] && !data['月']) { msg('実施日（未定なら実施予定の月）を入れてください', 'ng'); return; }
-  for (const k of ['リンクURL', '配信URL', '参加サーバー']) if (data[k] && !/^https?:\/\//.test(data[k])) { msg(`${k} は https:// から書いてください`, 'ng'); return; }
-  // 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ）
+  for (const k of ['リンクURL', '配信URL', '参加サーバー']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
+  /* 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ） */
   const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
   if (data['日付'] && shown && toDate(shown[0]) !== data['日付']) {
     msg(`「実施日」(${data['日付'].replace(/-/g, '/')}) と「HPに出す日にちの書き方」(${shown[0]}) の日にちが違います。どちらかを直すか、「HPに出す日にちの書き方」を空にしてください（実施日から自動で入ります）。`, 'ng'); return;
