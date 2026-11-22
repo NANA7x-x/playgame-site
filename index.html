@@ -172,6 +172,7 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 .sbox input:focus{border-color:var(--cyan);outline:none}
 .sbox select{min-height:42px;font:16px "M PLUS 1p",sans-serif;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 10px}
 .sbox select:focus{border-color:var(--cyan);outline:none}
+.gsel{flex:0 1 260px}.gsel select{flex:1;min-width:0}
 .dfilter{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;flex:1 1 100%}
 .dfilter .ysel{flex:0 0 auto}
 .dfilter .dsel{flex:1 1 320px}
@@ -471,7 +472,7 @@ ul.news li:hover{background:#ff3fd010;padding-left:12px}
   <section class="page" id="events" aria-label="イベント情報">
     <h2 class="st"><span class="ic" style="--c:var(--cyan)"></span>イベント情報</h2>
     <div class="filter st" role="search">
-      <div class="chips" id="gchips" aria-label="ゲームで絞り込み"></div>
+      <label class="sbox gsel"><span class="lb">ゲーム</span><select id="fg" aria-label="ゲームで絞り込み"></select></label>
       <label class="sbox"><span class="lb">検索</span><input id="q" type="search" placeholder="イベント名・内容・日付で検索" autocomplete="off"></label>
       <div class="dfilter">
         <label class="sbox ysel"><span class="lb">年</span><select id="fy" aria-label="年で絞り込み"></select></label>
@@ -628,8 +629,8 @@ $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)
   <p class="invs">PGは、ゲームイベントの企画・運営・参加が気軽にできるコミュニティです。「こんな大会やりたい」「この企画を一緒にやりたい」など、Discordサーバーで気軽に相談してください。</p></div>
   ${L.discord.url ? `<a class="btn"${ext(L.discord.url)}>Discordサーバーで相談する</a>` : ""}</div>`;
 };
-$("#gchips").innerHTML = ["すべて", ...GLIST].map((g) => `<button type="button" class="chip" data-g="${g === "すべて" ? "" : esc(g)}" style="--c:${GC[g] || (g === "すべて" ? "var(--ink)" : "var(--violet)")}" aria-pressed="${g === "すべて"}">${esc(g)}</button>`).join("");
-$("#gchips").addEventListener("click", (ev) => { const b = ev.target.closest(".chip"); if (!b) return; fGame = b.dataset.g; document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === b)); renderMonths(); });
+$("#fg").innerHTML = `<option value="">すべてのゲーム</option>` + GLIST.map((g) => `<option value="${esc(g)}">${esc(g)}</option>`).join("");
+$("#fg").addEventListener("change", (ev) => { fGame = ev.target.value; renderMonths(); });
 $("#q").addEventListener("input", (ev) => { fQ = ev.target.value.trim().toLowerCase(); renderMonths(); });
 const years = [...new Set([...EV.map((e) => e.month.slice(0, 4)), String(today.getFullYear())])].filter(Boolean).sort();
 $("#fy").innerHTML = `<option value="">すべて</option>` + years.map((y) => `<option value="${y}">${y}年</option>`).join("");
@@ -639,7 +640,7 @@ $("#fd2").addEventListener("change", (ev) => { fD2 = ev.target.value; renderMont
 $("#fclear").addEventListener("click", () => {
   fGame = fQ = fY = fD1 = fD2 = "";
   $("#q").value = ""; $("#fy").value = ""; $("#fd1").value = ""; $("#fd2").value = "";
-  document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.g === ""));
+  $("#fg").value = "";
   renderMonths();
 });
 renderMonths();
