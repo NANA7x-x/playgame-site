@@ -6,6 +6,7 @@
 <style>
 :root{--bg:#0b0814;--panel:#16121f;--panel2:#1f1a2c;--line:#3a3050;--ink:#f3eefc;--sub:#b9add0;--pink:#ff3fd0;--cyan:#2fd8ff;--mint:#3dffb0}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
 main{max-width:860px;margin:0 auto;padding:20px 16px 80px}
 h1{font-size:22px;margin:0 0 4px}
@@ -34,6 +35,7 @@ button:disabled{opacity:.5;cursor:wait}
 .actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 0 8px}
 #msg{flex:1 1 240px;font-size:14px}
 #msg.ok{color:var(--mint)}#msg.ng{color:#ff9b9b}
+.err{flex:1 1 100%;background:#3a1020;border:2px solid #ff6b6b;color:#ffd0d0;border-radius:10px;padding:12px 14px;font-size:15px;white-space:pre-line}
 .done{background:var(--panel);border:2px solid var(--mint);border-radius:16px;padding:28px 20px;text-align:center;margin:10px 0 20px}
 .done h2{margin:0 0 6px;font-size:24px;color:var(--mint)}
 .done .nm{font-size:18px;font-weight:700;margin:6px 0 4px;word-break:break-word}
@@ -69,7 +71,7 @@ button:disabled{opacity:.5;cursor:wait}
     <fieldset><legend>基本</legend>
       <div class="grid">
         <label class="full"><span class="req">イベント名</span><input name="イベント名" maxlength="100" placeholder="PROFLUX CUP 01"><span class="hint">「イベント名未定」のあいだは Discord の告知は出ません</span></label>
-        <label>種類<select name="種類"><option>メイン</option><option>小規模</option></select></label>
+        <label>種類<select name="種類"><option>メイン</option><option>小規模</option><option>Nexus Server</option></select></label>
         <label>ゲーム<input name="ゲーム" list="games" placeholder="VALORANT"></label>
         <label class="check"><input type="checkbox" name="確定" value="済">内容が確定した（「確定前」の表示が消えます）</label>
       </div>
@@ -77,10 +79,11 @@ button:disabled{opacity:.5;cursor:wait}
 
     <fieldset><legend>日程</legend>
       <div class="grid">
-        <label>日付<input type="date" name="日付"><span class="hint">決まっていなければ空でOK（下の「月」を選ぶ）</span></label>
-        <label>開始時刻<input type="time" name="開始時刻"><span class="hint">入れると当日朝と30分前に告知</span></label>
-        <label>月<input type="month" name="月"><span class="hint">日付を入れたら自動で入ります</span></label>
-        <label class="full">日時（HPに出す文字）<input name="日時" placeholder="空なら日付から自動で「2027/1/23（土）」"><span class="hint">「1月中（日程調整中）」のように自由に書けます</span></label>
+        <label>実施日<input type="date" name="日付"><span class="hint">まだ決まっていなければ空でOK</span></label>
+        <label>開始時刻<input type="time" name="開始時刻"><span class="hint">入れると当日の朝と30分前に告知します</span></label>
+        <label id="monthBox">実施予定の月（実施日が未定のとき）<input type="month" name="月"><span class="hint">実施日を入れたら不要です</span></label>
+        <label class="full">募集期間<input name="募集期間" placeholder="1/5〜1/20 23:59"><span class="hint">ここから募集開始・募集締切が自動で決まり、その日に告知します</span></label>
+        <label class="full">HPに出す日にちの書き方（ふだんは空でOK）<input name="日時" placeholder="空なら実施日から自動で「2026/11/22（日）」"><span class="hint">「1月中（日程調整中）」のように書きたいときだけ使います</span></label>
       </div>
     </fieldset>
 
@@ -95,7 +98,6 @@ button:disabled{opacity:.5;cursor:wait}
     <fieldset><legend>募集</legend>
       <div class="grid">
         <label>募集状況<select name="募集状況"><option>調整中</option><option>募集前</option><option>募集中</option><option>締切</option><option>開催終了</option></select></label>
-        <label>募集期間<input name="募集期間" placeholder="1/5〜1/20 23:59"><span class="hint">ここから募集開始・締切が自動で決まります</span></label>
         <label>定員<input name="定員" placeholder="8チーム"></label>
         <label class="full">応募条件<textarea name="応募条件" placeholder="1行に1つ書くと、HPで箇条書きになります"></textarea></label>
         <label class="full">参加方法<textarea name="参加方法" placeholder="Discordのエントリーチャンネルで申請"></textarea></label>
@@ -113,6 +115,7 @@ button:disabled{opacity:.5;cursor:wait}
     </fieldset>
 
     <div class="actions">
+      <div id="err" class="err" role="alert" hidden></div>
       <span id="msg" role="status"></span>
       <button type="button" class="danger" id="del" hidden>このイベントを消す</button>
       <button type="button" class="primary" id="save">保存する</button>
@@ -125,8 +128,16 @@ button:disabled{opacity:.5;cursor:wait}
 const $ = (s) => document.querySelector(s);
 const form = $('#f');
 let events = [], current = null;
-const run = (fn, ...args) => new Promise((ok, ng) => google.script.run.withSuccessHandler(ok).withFailureHandler(ng)[fn](...args));
-const msg = (t, cls) => { $('#msg').textContent = t; $('#msg').className = cls || ''; };
+const run = (fn, ...args) => new Promise((ok, ng) => {
+  const slow = setTimeout(() => { $('#msg').textContent = 'Googleからの返事を待っています…（30秒以上かかるときは、ページを開き直してください）'; }, 8000);
+  google.script.run.withSuccessHandler((r) => { clearTimeout(slow); ok(r); }).withFailureHandler((e) => { clearTimeout(slow); ng(e); })[fn](...args);
+});
+const msg = (t, cls) => {
+  const err = cls === 'ng';
+  $('#err').hidden = !err; $('#err').textContent = err ? '⚠ 保存できませんでした\n' + t : '';
+  $('#msg').textContent = err ? '' : t; $('#msg').className = err ? '' : (cls || '');
+  if (err) $('#err').scrollIntoView({ block: 'center', behavior: 'smooth' });
+};
 const busy = (on) => { $('#save').disabled = $('#del').disabled = on; };
 
 // シートの表示（2027/01/23 や 2027-01-23、20:00:00）を入力欄の形にそろえる
@@ -148,6 +159,7 @@ function fill(e) {
     else el.value = v;
   }
   $('#del').hidden = !e;
+  syncMonth();
   $('#save').textContent = e ? '変更を保存する' : '登録する';
   showAuto(e);
 }
@@ -171,7 +183,9 @@ async function load(selectRow) {
 }
 $('#pick').addEventListener('change', (ev) => { fill(events.find((e) => e.row === +ev.target.value) || null); msg(''); });
 $('#reload').addEventListener('click', () => load(current && current.row));
-form.elements['日付'].addEventListener('change', (ev) => { if (ev.target.value) form.elements['月'].value = ev.target.value.slice(0, 7); });
+const syncMonth = () => { const d = form.elements['日付'].value; if (d) form.elements['月'].value = d.slice(0, 7); $('#monthBox').hidden = !!d; };
+form.elements['日付'].addEventListener('change', syncMonth);
+form.elements['日付'].addEventListener('input', syncMonth);
 
 // Enter キーなどでページが読み込み直されないよう、フォームの送信は使わずボタンで保存する
 form.addEventListener('submit', (ev) => { ev.preventDefault(); save(); });
@@ -195,12 +209,12 @@ async function save() {
   const data = {};
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
-  if (!data['日付'] && !data['月']) { msg('日付か月を入れてください', 'ng'); return; }
+  if (!data['日付'] && !data['月']) { msg('実施日（未定なら実施予定の月）を入れてください', 'ng'); return; }
   for (const k of ['リンクURL', '配信URL', '参加サーバー']) if (data[k] && !/^https?:\/\//.test(data[k])) { msg(`${k} は https:// から書いてください`, 'ng'); return; }
   // 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ）
   const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
   if (data['日付'] && shown && toDate(shown[0]) !== data['日付']) {
-    msg(`「日付」(${data['日付'].replace(/-/g, '/')}) と「日時」(${shown[0]}) の日にちが違います。どちらかを直すか、「日時」を空にすると日付から自動で入ります。`, 'ng'); return;
+    msg(`「実施日」(${data['日付'].replace(/-/g, '/')}) と「HPに出す日にちの書き方」(${shown[0]}) の日にちが違います。どちらかを直すか、「HPに出す日にちの書き方」を空にしてください（実施日から自動で入ります）。`, 'ng'); return;
   }
   saving = true; busy(true); msg('保存中…');
   try {
@@ -208,7 +222,7 @@ async function save() {
     await load(res.row);
     msg('');
     showDone(res.saved || current);
-  } catch (err) { msg(err.message, 'ng'); }
+  } catch (err) { msg((err && err.message) || String(err), 'ng'); console.error(err); }
   saving = false; busy(false);
 }
 $('#del').addEventListener('click', async () => {
