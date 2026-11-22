@@ -179,6 +179,13 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 .dfilter .til{opacity:.7}
 .sbox .lb{white-space:nowrap}
 .lnk{color:var(--cyan);word-break:break-all}
+.yhead{font:22px "DotGothic16",monospace;color:var(--cyan);margin:22px 4px 10px;letter-spacing:.08em;display:flex;align-items:center;gap:12px}
+.yhead::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--line),transparent)}
+.months>.yhead:first-child{margin-top:0}
+.pastmon{margin-top:22px;border:2px dashed var(--line);border-radius:14px;padding:6px 14px 10px;opacity:.85}
+.pastmon>summary{cursor:pointer;font:16px "DotGothic16",monospace;color:var(--sub,#b9add0);padding:8px 2px;list-style:none}
+.pastmon>summary::before{content:"▶ ";font-size:12px}
+.pastmon[open]>summary::before{content:"▼ "}
 .invite{margin-top:26px}
 .invc{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0b0814f2,color-mix(in srgb,var(--c) 25%,#0b0814));border:2px dashed var(--c);border-radius:16px;padding:clamp(18px,3vw,28px);box-shadow:6px 6px 0 #000}
 .invt{flex:1 1 380px}
@@ -585,10 +592,12 @@ const filtering = () => !!(fGame || fQ || fY || fD1 || fD2);
 const qMonth = (e) => { const m = /^(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月$/.exec(fQ); if (!m) return null; return (!m[1] || e.month.startsWith(m[1])) && +e.month.slice(5) === +m[2]; };
 const match = (e) => (!fGame || e.game === fGame) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
 const renderMonths = () => {
-const SHOWN = EV.filter(match);
-const months = [...new Set(SHOWN.map((e) => e.month))];
+// 日付順（日付のないイベントはその月の最後）
+const SHOWN = EV.filter(match).slice().sort((a, b) => a.month !== b.month ? (a.month < b.month ? -1 : 1) : (a.d || "9999") < (b.d || "9999") ? -1 : (a.d || "9999") > (b.d || "9999") ? 1 : 0);
+const months = [...new Set(SHOWN.map((e) => e.month))].sort();
 const mname = (m) => { const [y, mo] = m.split("-"); return { y, mo: +mo }; };
-$("#months").innerHTML = months.map((m) => {
+const thisMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+const monthHtml = (m) => {
   const list = SHOWN.filter((e) => e.month === m), { y, mo } = mname(m), isNext = m === nextMonth;
   const mainEv = list.find((e) => e.type === "メイン");
   const others = list.length - (mainEv ? 1 : 1);
@@ -605,7 +614,13 @@ $("#months").innerHTML = months.map((m) => {
         </div>
       </a>`).join("")}</div>
   </details>`;
-}).join("");
+};
+// 年が変わるところに見出しを入れる
+const withYears = (ms) => { let last = ""; return ms.map((m) => { const y = m.slice(0, 4), h = y !== last ? `<h3 class="yhead">${y}</h3>` : ""; last = y; return h + monthHtml(m); }).join(""); };
+// 絞り込み中は全部を日付順に。ふだんは「これから」を上に、終わった月は下にまとめて畳む
+const upcoming = filtering() ? months : months.filter((m) => m >= thisMonth);
+const past = filtering() ? [] : months.filter((m) => m < thisMonth).reverse();
+$("#months").innerHTML = withYears(upcoming) + (past.length ? `<details class="pastmon"><summary>終わった月（${past.length}）</summary>${withYears(past)}</details>` : "");
 if (!SHOWN.length) $("#months").innerHTML = `<div class="empty"><b>NO EVENT</b>${fGame ? esc(fGame) + " のイベントは、まだ予定されていません。" : "条件に合うイベントが見つかりませんでした。"}</div>`;
 const g = fGame && fGame !== "複数タイトル" ? fGame : "";
 $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)"}">
