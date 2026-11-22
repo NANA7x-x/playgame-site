@@ -170,6 +170,15 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 .sbox{display:flex;align-items:center;gap:6px;flex:1 1 220px}
 .sbox input{flex:1;min-width:0;min-height:42px;font:16px "M PLUS 1p",sans-serif;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 12px}
 .sbox input:focus{border-color:var(--cyan);outline:none}
+.sbox select{min-height:42px;font:16px "M PLUS 1p",sans-serif;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 10px}
+.sbox select:focus{border-color:var(--cyan);outline:none}
+.dfilter{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;flex:1 1 100%}
+.dfilter .ysel{flex:0 0 auto}
+.dfilter .dsel{flex:1 1 320px}
+.dfilter .dsel input{min-width:0;flex:1 1 130px;color-scheme:dark}
+.dfilter .til{opacity:.7}
+.sbox .lb{white-space:nowrap}
+.lnk{color:var(--cyan);word-break:break-all}
 .invite{margin-top:26px}
 .invc{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0b0814f2,color-mix(in srgb,var(--c) 25%,#0b0814));border:2px dashed var(--c);border-radius:16px;padding:clamp(18px,3vw,28px);box-shadow:6px 6px 0 #000}
 .invt{flex:1 1 380px}
@@ -456,7 +465,12 @@ ul.news li:hover{background:#ff3fd010;padding-left:12px}
     <h2 class="st"><span class="ic" style="--c:var(--cyan)"></span>イベント情報</h2>
     <div class="filter st" role="search">
       <div class="chips" id="gchips" aria-label="ゲームで絞り込み"></div>
-      <label class="sbox"><span class="lb">検索</span><input id="q" type="search" placeholder="イベント名・内容で検索" autocomplete="off"></label>
+      <label class="sbox"><span class="lb">検索</span><input id="q" type="search" placeholder="イベント名・内容・日付で検索" autocomplete="off"></label>
+      <div class="dfilter">
+        <label class="sbox ysel"><span class="lb">年</span><select id="fy" aria-label="年で絞り込み"></select></label>
+        <label class="sbox dsel"><span class="lb">日付</span><input id="fd1" type="date" aria-label="この日から"><span class="til">〜</span><input id="fd2" type="date" aria-label="この日まで"></label>
+        <button type="button" class="tbtn" id="fclear">条件をクリア</button>
+      </div>
     </div>
     <div class="evtools st"><button type="button" class="tbtn" id="openAll">すべて開く</button><button type="button" class="tbtn" id="closeAll">すべて閉じる</button><button type="button" class="tbtn" id="openNext">NEXTだけ開く</button></div>
     <div class="months st" id="months" style="animation-delay:.08s"></div>
@@ -533,6 +547,10 @@ if (LITE) document.documentElement.classList.add("lite");
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const COLS = ["var(--pink)", "var(--cyan)", "var(--mint)", "var(--violet)"];
+// 改行をそのまま表示し、URLはクリックできるリンクにする
+const rich = (s) => esc(s || "").replace(/(https?:\/\/[^\s<"]+)/g, (u) => `<a class="lnk" href="${u}" target="_blank" rel="noopener">${u}</a>`).replace(/\n/g, "<br>");
+// 一覧の行はそれ自体がリンクなので、中にリンクは入れず改行だけ残す
+const lines2br = (s) => esc(s || "").replace(/\n/g, "<br>");
 const ext = (u) => u ? ` href="${esc(u)}" target="_blank" rel="noopener"` : "";
 const L = SITE.links;
 const btn = (l, cls) => l.url ? `<a class="btn ${cls}"${ext(l.url)}>${esc(l.title)}</a>` : `<a class="btn ${cls}" aria-disabled="true">${esc(l.title)}（準備中）</a>`;
@@ -553,8 +571,19 @@ const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sor
 const nextMonth = nextEv ? nextEv.month : null;
 const GLIST = ["VALORANT", "OW2", "Apex", "Minecraft", "複数タイトル"];
 EV.forEach((e) => { if (e.game && !GLIST.includes(e.game)) GLIST.splice(GLIST.length - 1, 0, e.game); });
-let fGame = "", fQ = "";
-const match = (e) => (!fGame || e.game === fGame) && (!fQ || [e.name, e.detail, e.game, e.date, e.type].join(" ").toLowerCase().includes(fQ));
+let fGame = "", fQ = "", fY = "", fD1 = "", fD2 = "";
+// 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
+const monthEnd = (m) => { const [y, mo] = m.split("-").map(Number); return `${m}-${String(new Date(y, mo, 0).getDate()).padStart(2, "0")}`; };
+const inRange = (e) => {
+  if (!fD1 && !fD2) return true;
+  const from = e.d || `${e.month}-01`, to = e.d || monthEnd(e.month);
+  return (!fD1 || to >= fD1) && (!fD2 || from <= fD2);
+};
+const qText = (e) => [e.name, e.detail, e.game, e.date, e.type, e.d, e.d && e.d.replace(/-0?/g, "/"), e.month, e.month && e.month.replace("-", "年") + "月", e.month && (+e.month.slice(5)) + "月"].join(" ").toLowerCase();
+const filtering = () => !!(fGame || fQ || fY || fD1 || fD2);
+// 「2月」「2027年2月」は月で探す（「12月」に当たらないように）
+const qMonth = (e) => { const m = /^(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月$/.exec(fQ); if (!m) return null; return (!m[1] || e.month.startsWith(m[1])) && +e.month.slice(5) === +m[2]; };
+const match = (e) => (!fGame || e.game === fGame) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
 const renderMonths = () => {
 const SHOWN = EV.filter(match);
 const months = [...new Set(SHOWN.map((e) => e.month))];
@@ -563,15 +592,15 @@ $("#months").innerHTML = months.map((m) => {
   const list = SHOWN.filter((e) => e.month === m), { y, mo } = mname(m), isNext = m === nextMonth;
   const mainEv = list.find((e) => e.type === "メイン");
   const others = list.length - (mainEv ? 1 : 1);
-  return `<details class="mon${isNext ? " next" : ""}" data-m="${m}"${isNext || fGame || fQ ? " open" : ""}>
+  return `<details class="mon${isNext ? " next" : ""}" data-m="${m}"${isNext || filtering() ? " open" : ""}>
     <summary><span class="mn"><b>${mo}</b>月</span><span class="my">${y}</span><span class="mt">${mainEv ? `<span class="mtn">${esc(mainEv.name)}</span>${mainEv.game ? `<span class="gm" style="--c:${GC[mainEv.game] || "var(--violet)"}">${esc(mainEv.game)}</span>` : ""}${tentChip(mainEv)}` : `<span class="mtn">${esc(list[0].name)}</span>`}</span>${isNext ? '<span class="nx">NEXT</span>' : ""}<span class="cnt">${others > 0 ? `ほか${others}件のイベント` : ""}</span><span class="chev" aria-hidden="true"></span></summary>
     <div class="evs">${list.map((e) => `
       <a class="evr${e === nextEv ? " isnext" : ""}" href="#${e.id}" style="--c:${GC[e.game] || "var(--violet)"}">
         <div class="when"><span class="lb">日時</span><span class="dt">${esc(e.date)}</span></div>
         <div class="what">
           <div class="nm"><span class="lb">名前</span><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<p class="ttl">${esc(e.name)}</p></div>
-          <div class="dtl"><span class="lb">詳細</span><p>${esc(e.detail)}</p></div>
-          ${e.note ? `<div class="rmk"><span class="lb">備考</span><p>${esc(e.note).replace(/\n/g, "<br>")}</p></div>` : ""}
+          <div class="dtl"><span class="lb">詳細</span><p>${lines2br(e.detail)}</p></div>
+          ${e.note ? `<div class="rmk"><span class="lb">備考</span><p>${lines2br(e.note)}</p></div>` : ""}
           <div class="more">${stChip(e.status)}<span class="go">詳細を見る ▶</span></div>
         </div>
       </a>`).join("")}</div>
@@ -587,6 +616,17 @@ $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)
 $("#gchips").innerHTML = ["すべて", ...GLIST].map((g) => `<button type="button" class="chip" data-g="${g === "すべて" ? "" : esc(g)}" style="--c:${GC[g] || (g === "すべて" ? "var(--ink)" : "var(--violet)")}" aria-pressed="${g === "すべて"}">${esc(g)}</button>`).join("");
 $("#gchips").addEventListener("click", (ev) => { const b = ev.target.closest(".chip"); if (!b) return; fGame = b.dataset.g; document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === b)); renderMonths(); });
 $("#q").addEventListener("input", (ev) => { fQ = ev.target.value.trim().toLowerCase(); renderMonths(); });
+const years = [...new Set([...EV.map((e) => e.month.slice(0, 4)), String(today.getFullYear())])].filter(Boolean).sort();
+$("#fy").innerHTML = `<option value="">すべて</option>` + years.map((y) => `<option value="${y}">${y}年</option>`).join("");
+$("#fy").addEventListener("change", (ev) => { fY = ev.target.value; renderMonths(); });
+$("#fd1").addEventListener("change", (ev) => { fD1 = ev.target.value; renderMonths(); });
+$("#fd2").addEventListener("change", (ev) => { fD2 = ev.target.value; renderMonths(); });
+$("#fclear").addEventListener("click", () => {
+  fGame = fQ = fY = fD1 = fD2 = "";
+  $("#q").value = ""; $("#fy").value = ""; $("#fd1").value = ""; $("#fd2").value = "";
+  document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.g === ""));
+  renderMonths();
+});
 renderMonths();
 const mons = () => [...document.querySelectorAll("details.mon")];
 $("#openAll").addEventListener("click", () => mons().forEach((d) => d.open = true));
@@ -606,13 +646,13 @@ const renderDetail = (e) => {
     </div>
     <div class="dgrid">
       <div class="card st" style="animation-delay:.06s"><h3>イベント概要</h3><dl class="spec">
-        ${row("日時", esc(e.date))}${row("ゲーム", esc(e.game || "—"))}${row("内容", esc(e.detail))}${row("定員", esc(e.capacity || ""))}
+        ${row("日時", esc(e.date))}${row("ゲーム", esc(e.game || "—"))}${row("内容", rich(e.detail))}${row("定員", esc(e.capacity || ""))}
       </dl></div>
       <div class="card st" style="animation-delay:.12s"><h3>募集</h3><dl class="spec">
         ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc(e.period || ""))}${row("参加方法", esc(e.apply || ""))}
       </dl>${e.conditions && e.conditions.length ? `<h3 style="margin-top:18px">応募条件</h3>${list(e.conditions)}` : ""}</div>
       ${e.rules && e.rules.length ? `<div class="card st" style="animation-delay:.18s"><h3>ルール</h3>${list(e.rules)}</div>` : ""}
-      ${e.note || (e.links && e.links.length) ? `<div class="card st" style="animation-delay:.22s"><h3>備考</h3>${e.note ? `<p style="margin:0">${esc(e.note).replace(/\n/g, "<br>")}</p>` : ""}<div class="row">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div></div>` : ""}
+      ${e.note || (e.links && e.links.length) ? `<div class="card st" style="animation-delay:.22s"><h3>備考</h3>${e.note ? `<p style="margin:0">${rich(e.note)}</p>` : ""}<div class="row">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div></div>` : ""}
     </div>
     <div class="dnav st">${prev ? `<a class="tbtn" href="#${prev.id}">◀ ${esc(prev.name)}</a>` : "<span></span>"}${next ? `<a class="tbtn" href="#${next.id}">${esc(next.name)} ▶</a>` : ""}</div>`;
 };
