@@ -35,6 +35,7 @@ button:disabled{opacity:.5;cursor:wait}
 .actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 0 8px}
 #msg{flex:1 1 240px;font-size:14px}
 #msg.ok{color:var(--mint)}#msg.ng{color:#ff9b9b}
+.newsck{flex:1 1 100%;justify-content:flex-end;font-size:14px}
 .err{flex:1 1 100%;background:#3a1020;border:2px solid #ff6b6b;color:#ffd0d0;border-radius:10px;padding:12px 14px;font-size:15px;white-space:pre-line}
 .done{background:var(--panel);border:2px solid var(--mint);border-radius:16px;padding:28px 20px;text-align:center;margin:10px 0 20px}
 .done h2{margin:0 0 6px;font-size:24px;color:var(--mint)}
@@ -53,6 +54,7 @@ button:disabled{opacity:.5;cursor:wait}
     <h2>✅ 保存しました！</h2>
     <p class="nm" id="doneName"></p>
     <p class="info" id="doneInfo"></p>
+    <p class="info" id="doneNews"></p>
     <p class="info">HPとDiscordの告知に反映されます（HPは開き直すと出ます）。</p>
     <div class="btns">
       <button type="button" class="primary" id="again">＋ 続けて別のイベントを登録する</button>
@@ -115,6 +117,7 @@ button:disabled{opacity:.5;cursor:wait}
     </fieldset>
 
     <div class="actions">
+      <label class="check newsck"><input type="checkbox" id="news" checked><span id="newsLabel">HPのお知らせに「情報を公開しました」を載せる</span></label>
       <div id="err" class="err" role="alert" hidden></div>
       <span id="msg" role="status"></span>
       <button type="button" class="danger" id="del" hidden>このイベントを消す</button>
@@ -159,6 +162,8 @@ function fill(e) {
     else el.value = v;
   }
   $('#del').hidden = !e;
+  $('#news').checked = !e;
+  $('#newsLabel').textContent = e ? 'HPのお知らせに「情報を更新しました」を載せる' : 'HPのお知らせに「情報を公開しました」を載せる';
   syncMonth();
   $('#save').textContent = e ? '変更を保存する' : '登録する';
   showAuto(e);
@@ -216,12 +221,14 @@ async function save() {
   if (data['日付'] && shown && toDate(shown[0]) !== data['日付']) {
     msg(`「実施日」(${data['日付'].replace(/-/g, '/')}) と「HPに出す日にちの書き方」(${shown[0]}) の日にちが違います。どちらかを直すか、「HPに出す日にちの書き方」を空にしてください（実施日から自動で入ります）。`, 'ng'); return;
   }
+  data.__news = $('#news').checked ? (current ? 'update' : 'new') : '';
   saving = true; busy(true); msg('保存中…');
   try {
     const res = await run('saveEvent', data, current ? current.row : 0);
     await load(res.row);
     msg('');
     showDone(res.saved || current);
+    $('#doneNews').textContent = res.news ? '📰 HPのお知らせにも載せました：' + res.news : '';
   } catch (err) { msg((err && err.message) || String(err), 'ng'); console.error(err); }
   saving = false; busy(false);
 }
