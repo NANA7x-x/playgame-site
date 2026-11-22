@@ -131,6 +131,8 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}#welcome .stage{transition:none}}
 
 
+#about .about{grid-template-columns:minmax(0,1fr)}
+
 @media(max-width:560px){.hud .gn,.hud .best{display:none}.hud{padding:4px 6px 4px 10px;gap:6px}.hud button{min-height:32px;padding:2px 8px}.toast{bottom:64px;font-size:13px}}
 
 /* lite（スマホ）: 重い効果を省いて安定させる */
@@ -421,11 +423,6 @@ ul.news li:hover{background:#ff3fd010;padding-left:12px}
         <div class="row" id="aboutBtns"></div>
         <div class="nextbox" id="nextbox"></div>
       </div>
-      <div class="logo st" style="animation-delay:.1s">
-        <div class="mk" id="mk" role="img" aria-label="PG"><div class="mkin" id="mkin"><div class="" style="position:absolute;left:0px;top:0px;width:760px;height:584px;"><div class="mkspin" style="position:absolute;inset:0"><div class="pcgbot" style="position:absolute;inset:0"><div style="position:absolute;inset:0;isolation:isolate"><img class="glow" src="img/gbot.png" alt="" style="position:absolute;inset:0;width:760px;height:584px"><div class="rbw m-gbot" style="position:absolute;inset:0"></div><div class="shine m-gbot" style="position:absolute;inset:0"></div></div></div><div class="pcgtop" style="position:absolute;inset:0"><div style="position:absolute;inset:0;isolation:isolate"><img class="glow" src="img/gtop.png" alt="" style="position:absolute;inset:0;width:760px;height:584px"><div class="rbw m-gtop" style="position:absolute;inset:0"></div><div class="shine m-gtop" style="position:absolute;inset:0"></div></div></div><div class="pcp" style="position:absolute;inset:0"><div style="position:absolute;inset:0;isolation:isolate"><img class="glow" src="img/p.png" alt="" style="position:absolute;inset:0;width:760px;height:584px"><div class="rbw m-p" style="position:absolute;inset:0"></div><div class="shine m-p" style="position:absolute;inset:0"></div></div></div><div class="pcheart" style="position:absolute;inset:0"><div class="hbb" style="position:absolute;inset:0"><img src="img/heart.png" alt="" style="position:absolute;inset:0;width:760px;height:584px"></div></div><img class="gl" src="img/mark2.png" alt="" style="position:absolute;inset:0;width:760px;height:584px;clip-path:inset(18% 0 62% 0)"><img class="gl" src="img/mark2.png" alt="" style="position:absolute;inset:0;width:760px;height:584px;clip-path:inset(58% 0 24% 0);animation-delay:.08s"></div><div class="burst" style="position:absolute;left:426px;top:274px;width:684px;height:684px;border-radius:50%;border:10px solid #ffffff;box-shadow:0 0 30px #ffffff,inset 0 0 30px #ffffff;pointer-events:none"></div></div></div></div>
-        <img class="k bob2" src="img/kana.png" alt="プレイゲーム">
-        <img class="e bob2" style="animation-delay:.6s" src="img/en.png" alt="PLAY GAME">
-      </div>
     </div>
     <div class="topgrid">
       <div class="st" style="animation-delay:.15s">
@@ -624,8 +621,7 @@ $("#tk").innerHTML = tkHalf + tkHalf;
 const bar = $("#bar");
 const setHH = () => document.documentElement.style.setProperty("--hh", bar.offsetHeight + "px");
 const roBar = new ResizeObserver(setHH); roBar.observe(bar);
-const mk = $("#mk"), mkin = $("#mkin");
-const roMk = new ResizeObserver(() => { mkin.style.transform = `scale(${mk.clientWidth / 760})`; }); roMk.observe(mk);
+
 
 /* ---------- pages + pixel wipe ---------- */
 const PAGES = ["about", "events", "archive"];
@@ -649,7 +645,7 @@ const setPage = (id) => {
   document.querySelectorAll(".page").forEach((p) => p.classList.toggle("cur", p.id === pid));
   document.querySelectorAll("#nav a").forEach((a) => { if (a.getAttribute("href") === "#" + navId) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   scrollTo(0, 0); cur = id;
-  const hudEl = document.getElementById("hud"); if (hudEl) hudEl.hidden = id !== "about";
+  const hudEl = document.getElementById("hud"); if (hudEl) hudEl.hidden = id !== "about" || LITE;
   if (id !== "about") { const tt = document.getElementById("toast"); if (tt) tt.classList.add("hide"); }
 };
 const valid = (id) => PAGES.includes(id) || EV.some((e) => e.id === id);
@@ -833,9 +829,9 @@ try { on = localStorage.getItem("pg_game") !== "off"; } catch (e) {}
 setOn(on);
 tog.addEventListener("click", () => setOn(!on));
 $("#gnext").addEventListener("click", () => { const i = GAMES.indexOf(game); startGame(GAMES[(i + 1) % GAMES.length]); });
-startGame(GAMES[(Math.random() * GAMES.length) | 0]);
+if (LITE) { $("#hud").remove(); on = false; } else startGame(GAMES[(Math.random() * GAMES.length) | 0]);
 const blocked = (el) => el.closest("a,button,input,label,.card,nav,.hud,header,#welcome,.empty,ul.news li,h2,h3,p,dl,ol,.logo,.toast");
-addEventListener("pointermove", (e) => { px = e.clientX; py = e.clientY; hasPtr = true; if (!reduce && Math.random() < .3) parts.push({ x: px, y: py, vx: rnd(-10, 10), vy: 20, life: .45, c: NEONC[(t0 * 10 | 0) % 6], s: 3 }); });
+addEventListener("pointermove", (e) => { px = e.clientX; py = e.clientY; hasPtr = true; if (!reduce && !LITE && Math.random() < .3) parts.push({ x: px, y: py, vx: rnd(-10, 10), vy: 20, life: .45, c: NEONC[(t0 * 10 | 0) % 6], s: 3 }); });
 addEventListener("pointerdown", (e) => { px = e.clientX; py = e.clientY; hasPtr = true; if (!on || cur !== "about" || blocked(e.target)) return; if (over) { if (overT > 1) startGame(game); return; } if (game.tap) game.tap(e.clientX, e.clientY); });
 const loop = (ts) => {
   const dt = Math.min((ts - last) / 1000 || 0, .05); last = ts; t0 += dt;
