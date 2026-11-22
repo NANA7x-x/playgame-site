@@ -6,7 +6,7 @@
 window.SITE = {
   // ---- Googleシート連携（GitHub Pages で公開したとき使われます）----
   // id: シートURLの /d/ と /edit の間の文字列。空ならこのファイルの内容を表示
-  sheet: { id: "", tabs: { events: "イベント", news: "お知らせ", archive: "過去のイベント" } },
+  sheet: { id: "1LB24cc6LTDr2vjWspo_GD8tI6QsYJ1Y7x2V4LCLdo_0", tabs: { events: "イベント", news: "お知らせ", archive: "過去のイベント" } },
   updated: "2026.11.22",
   about: [
     "PG（プレイゲーム / PLAY GAME）は、ゲームイベントの企画・運営・参加が気軽にできるコミュニティサーバーです。",
