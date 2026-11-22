@@ -34,6 +34,12 @@ button:disabled{opacity:.5;cursor:wait}
 .actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 0 8px}
 #msg{flex:1 1 240px;font-size:14px}
 #msg.ok{color:var(--mint)}#msg.ng{color:#ff9b9b}
+.done{background:var(--panel);border:2px solid var(--mint);border-radius:16px;padding:28px 20px;text-align:center;margin:10px 0 20px}
+.done h2{margin:0 0 6px;font-size:24px;color:var(--mint)}
+.done .nm{font-size:18px;font-weight:700;margin:6px 0 4px;word-break:break-word}
+.done .info{color:var(--sub);font-size:14px;margin:0 0 4px}
+.done .btns{display:flex;flex-direction:column;gap:10px;max-width:360px;margin:20px auto 0}
+.done a.btnlink{display:block;text-align:center;text-decoration:none;font:inherit;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--panel2);color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -41,12 +47,25 @@ button:disabled{opacity:.5;cursor:wait}
   <h1>PG イベント登録</h1>
   <p class="sub">保存すると、スプレッドシートの「イベント」に入ります。HPとDiscordの告知（NANA Support）にもそのまま反映されます。詳細やルールの欄は、そのまま改行できます。</p>
 
+  <div class="done" id="done" hidden>
+    <h2>✅ 保存しました！</h2>
+    <p class="nm" id="doneName"></p>
+    <p class="info" id="doneInfo"></p>
+    <p class="info">HPとDiscordの告知に反映されます（HPは開き直すと出ます）。</p>
+    <div class="btns">
+      <button type="button" class="primary" id="again">＋ 続けて別のイベントを登録する</button>
+      <button type="button" id="editMore">このイベントをもう少し直す</button>
+      <a class="btnlink" href="https://nana7x-x.github.io/playgame-site/#events" target="_blank" rel="noopener">HPで確認する ↗</a>
+    </div>
+  </div>
+
+  <div id="editor">
   <div class="bar">
     <select id="pick" aria-label="編集するイベント"><option value="">＋ 新しいイベントを登録する</option></select>
     <button type="button" id="reload">一覧を読み直す</button>
   </div>
 
-  <form id="f" autocomplete="off" novalidate>
+  <form id="f" autocomplete="off" novalidate onsubmit="return false">
     <fieldset><legend>基本</legend>
       <div class="grid">
         <label class="full"><span class="req">イベント名</span><input name="イベント名" maxlength="100" placeholder="PROFLUX CUP 01"><span class="hint">「イベント名未定」のあいだは Discord の告知は出ません</span></label>
@@ -96,9 +115,10 @@ button:disabled{opacity:.5;cursor:wait}
     <div class="actions">
       <span id="msg" role="status"></span>
       <button type="button" class="danger" id="del" hidden>このイベントを消す</button>
-      <button type="submit" class="primary" id="save">保存する</button>
+      <button type="button" class="primary" id="save">保存する</button>
     </div>
   </form>
+  </div>
   <datalist id="games"><option>VALORANT</option><option>OW2</option><option>Apex</option><option>Minecraft</option><option>複数タイトル</option></datalist>
 </main>
 <script>
@@ -153,21 +173,44 @@ $('#pick').addEventListener('change', (ev) => { fill(events.find((e) => e.row ==
 $('#reload').addEventListener('click', () => load(current && current.row));
 form.elements['日付'].addEventListener('change', (ev) => { if (ev.target.value) form.elements['月'].value = ev.target.value.slice(0, 7); });
 
-form.addEventListener('submit', async (ev) => {
-  ev.preventDefault();
+// Enter キーなどでページが読み込み直されないよう、フォームの送信は使わずボタンで保存する
+form.addEventListener('submit', (ev) => { ev.preventDefault(); save(); });
+$('#save').addEventListener('click', save);
+let saving = false;
+function showDone(e) {
+  $('#doneName').textContent = e ? e['イベント名'] : '';
+  const parts = [];
+  if (e && (e['日時'] || e['日付'])) parts.push('日時：' + (e['日時'] || e['日付']) + (e['開始時刻'] ? ' ' + e['開始時刻'] + '〜' : ''));
+  if (e && (e['募集開始'] || e['募集締切'])) parts.push('募集開始：' + (e['募集開始'] || '—') + '　募集締切：' + (e['募集締切'] || '—'));
+  $('#doneInfo').textContent = parts.join('\n');
+  $('#doneInfo').style.whiteSpace = 'pre-line';
+  $('#editor').hidden = true; $('#done').hidden = false;
+  window.scrollTo(0, 0);
+}
+function showEditor() { $('#done').hidden = true; $('#editor').hidden = false; window.scrollTo(0, 0); }
+$('#again').addEventListener('click', () => { $('#pick').value = ''; fill(null); msg(''); showEditor(); });
+$('#editMore').addEventListener('click', () => { msg(''); showEditor(); });
+async function save() {
+  if (saving) return;
   const data = {};
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
   if (!data['日付'] && !data['月']) { msg('日付か月を入れてください', 'ng'); return; }
   for (const k of ['リンクURL', '配信URL', '参加サーバー']) if (data[k] && !/^https?:\/\//.test(data[k])) { msg(`${k} は https:// から書いてください`, 'ng'); return; }
-  busy(true); msg('保存中…');
+  // 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ）
+  const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
+  if (data['日付'] && shown && toDate(shown[0]) !== data['日付']) {
+    msg(`「日付」(${data['日付'].replace(/-/g, '/')}) と「日時」(${shown[0]}) の日にちが違います。どちらかを直すか、「日時」を空にすると日付から自動で入ります。`, 'ng'); return;
+  }
+  saving = true; busy(true); msg('保存中…');
   try {
     const res = await run('saveEvent', data, current ? current.row : 0);
     await load(res.row);
-    msg(`保存しました（シートの ${res.row} 行目）。募集開始・締切が正しいか確認してください。`, 'ok');
+    msg('');
+    showDone(res.saved || current);
   } catch (err) { msg(err.message, 'ng'); }
-  busy(false);
-});
+  saving = false; busy(false);
+}
 $('#del').addEventListener('click', async () => {
   if (!current || !confirm(`「${current['イベント名']}」を消しますか？（HPと告知からも消えます）`)) return;
   busy(true); msg('消しています…');
