@@ -173,7 +173,9 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 .sbox input:focus{border-color:var(--cyan);outline:none}
 .sbox select{min-height:42px;font:16px "M PLUS 1p",sans-serif;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 10px}
 .sbox select:focus{border-color:var(--cyan);outline:none}
-.gsel{flex:0 1 260px}.gsel select{flex:1;min-width:0}
+.gsel{flex:0 1 260px}.ksel{flex:0 1 210px}.ksel select{flex:1;min-width:0}
+.kd,.who{display:inline-block;font-size:12px;line-height:1;padding:4px 8px;border-radius:999px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);color:var(--sub)}
+.who{border-color:var(--pink);color:var(--pink);font-weight:700}.gsel select{flex:1;min-width:0}
 .dfilter{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;flex:1 1 100%}
 .dfilter .ysel{flex:0 0 auto}
 .dfilter .dsel{flex:1 1 320px}
@@ -506,6 +508,8 @@ html[data-theme=light] .btn.alt,html[data-theme=light] .btn.alt:hover{color:var(
     <h2 class="st"><span class="ic" style="--c:var(--cyan)"></span>イベント情報</h2>
     <div class="filter st" role="search">
       <label class="sbox gsel"><span class="lb">ゲーム</span><select id="fg" aria-label="ゲームで絞り込み"></select></label>
+      <label class="sbox ksel"><span class="lb">形式</span><select id="fk" aria-label="形式で絞り込み"><option value="">すべて</option><option value="大会">大会</option><option value="祭り">祭り</option><option value="交流会">交流会</option></select></label>
+      <label class="sbox ksel"><span class="lb">対象</span><select id="ft" aria-label="対象で絞り込み"><option value="">すべて</option><option value="誰でも">誰でも</option><option value="配信者だけ">配信者だけ</option><option value="配信者と一般">配信者と一般</option></select></label>
       <label class="sbox"><span class="lb">検索</span><input id="q" type="search" placeholder="イベント名・内容・日付で検索" autocomplete="off"></label>
       <div class="dfilter">
         <label class="sbox ysel"><span class="lb">年</span><select id="fy" aria-label="年で絞り込み"></select></label>
@@ -573,7 +577,7 @@ const loadSheet = async () => {
     return { month: ym(r["月"]) || (d ? d.slice(0, 7) : ""), d, date: r["日時"] || (d ? d.replace(/-/g, "/") : "日程調整中"),
       type: r["種類"] || "メイン", game: r["ゲーム"], name: r["イベント名"] || "イベント名未定", detail: r["詳細"] || "未定",
       confirmed: /^(済|確定|○|◯|TRUE|true|yes|1)$/.test(r["確定"] || ""), status: r["募集状況"] || "調整中", period: r["募集期間"], capacity: r["定員"], conditions: lines(r["応募条件"]), apply: r["参加方法"],
-      rules: lines(r["ルール"]), note: r["備考"], image: /^https:\/\/\S+$/.test(r["画像"] || "") ? r["画像"] : "", links: r["リンクURL"] ? [{ label: r["リンク名"] || "くわしく", url: r["リンクURL"] }] : [] };
+      rules: lines(r["ルール"]), note: r["備考"], kind: r["形式"] || "", who: r["対象"] || "", image: /^https:\/\/\S+$/.test(r["画像"] || "") ? r["画像"] : "", links: r["リンクURL"] ? [{ label: r["リンク名"] || "くわしく", url: r["リンクURL"] }] : [] };
   }).filter((e) => e.month);
   if (nw) window.SITE.news = nw.map((r) => ({ date: r["日付"], tag: r["タグ"], title: r["タイトル"], url: r["URL"] })).filter((n) => n.title);
   if (ar) window.SITE.archive = ar.map((r) => ({ name: r["イベント名"], date: r["日付"], game: r["ゲーム"],
@@ -612,7 +616,7 @@ const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sor
 const nextMonth = nextEv ? nextEv.month : null;
 const GLIST = ["VALORANT", "OW2", "Apex", "Minecraft", "複数タイトル"];
 EV.forEach((e) => { if (e.game && !GLIST.includes(e.game)) GLIST.splice(GLIST.length - 1, 0, e.game); });
-let fGame = "", fQ = "", fY = "", fD1 = "", fD2 = "";
+let fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
 // 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
 const monthEnd = (m) => { const [y, mo] = m.split("-").map(Number); return `${m}-${String(new Date(y, mo, 0).getDate()).padStart(2, "0")}`; };
 const inRange = (e) => {
@@ -620,11 +624,12 @@ const inRange = (e) => {
   const from = e.d || `${e.month}-01`, to = e.d || monthEnd(e.month);
   return (!fD1 || to >= fD1) && (!fD2 || from <= fD2);
 };
-const qText = (e) => [e.name, e.detail, e.game, e.date, e.type, e.d, e.d && e.d.replace(/-0?/g, "/"), e.month, e.month && e.month.replace("-", "年") + "月", e.month && (+e.month.slice(5)) + "月"].join(" ").toLowerCase();
-const filtering = () => !!(fGame || fQ || fY || fD1 || fD2);
+const qText = (e) => [e.name, e.detail, e.game, e.kind, e.who, e.date, e.type, e.d, e.d && e.d.replace(/-0?/g, "/"), e.month, e.month && e.month.replace("-", "年") + "月", e.month && (+e.month.slice(5)) + "月"].join(" ").toLowerCase();
+const filtering = () => !!(fGame || fK || fT || fQ || fY || fD1 || fD2);
 // 「2月」「2027年2月」は月で探す（「12月」に当たらないように）
 const qMonth = (e) => { const m = /^(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月$/.exec(fQ); if (!m) return null; return (!m[1] || e.month.startsWith(m[1])) && +e.month.slice(5) === +m[2]; };
-const match = (e) => (!fGame || e.game === fGame) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
+const match = (e) => (!fGame || e.game === fGame) && (!fK || e.kind === fK) && (!fT || e.who === fT) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
+const kindChips = (e) => (e.kind ? `<span class="kd">${esc(e.kind)}</span>` : "") + (e.who && e.who !== "誰でも" ? `<span class="who">${esc(e.who)}</span>` : "");
 const renderMonths = () => {
 // 日付順（日付のないイベントはその月の最後）
 const SHOWN = EV.filter(match).slice().sort((a, b) => a.month !== b.month ? (a.month < b.month ? -1 : 1) : (a.d || "9999") < (b.d || "9999") ? -1 : (a.d || "9999") > (b.d || "9999") ? 1 : 0);
@@ -641,7 +646,7 @@ const monthHtml = (m) => {
       <a class="evr${e === nextEv ? " isnext" : ""}" href="#${e.id}" style="--c:${GC[e.game] || "var(--violet)"}">
         <div class="when"><span class="lb">日時</span><span class="dt">${esc(e.date)}</span></div>
         <div class="what">
-          <div class="nm"><span class="lb">名前</span><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<p class="ttl">${esc(e.name)}</p></div>
+          <div class="nm"><span class="lb">名前</span><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<p class="ttl">${esc(e.name)}</p></div>
           <div class="dtl"><span class="lb">詳細</span><p>${lines2br(e.detail)}</p></div>
           ${e.note ? `<div class="rmk"><span class="lb">備考</span><p>${lines2br(e.note)}</p></div>` : ""}
           <div class="more">${stChip(e.status)}<span class="go">詳細を見る ▶</span></div>
@@ -664,6 +669,8 @@ $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)
 };
 $("#fg").innerHTML = `<option value="">すべてのゲーム</option>` + GLIST.map((g) => `<option value="${esc(g)}">${esc(g)}</option>`).join("");
 $("#fg").addEventListener("change", (ev) => { fGame = ev.target.value; renderMonths(); });
+$("#fk").addEventListener("change", (ev) => { fK = ev.target.value; renderMonths(); });
+$("#ft").addEventListener("change", (ev) => { fT = ev.target.value; renderMonths(); });
 $("#q").addEventListener("input", (ev) => { fQ = ev.target.value.trim().toLowerCase(); renderMonths(); });
 const years = [...new Set([...EV.map((e) => e.month.slice(0, 4)), String(today.getFullYear())])].filter(Boolean).sort();
 $("#fy").innerHTML = `<option value="">すべて</option>` + years.map((y) => `<option value="${y}">${y}年</option>`).join("");
@@ -671,7 +678,8 @@ $("#fy").addEventListener("change", (ev) => { fY = ev.target.value; renderMonths
 $("#fd1").addEventListener("change", (ev) => { fD1 = ev.target.value; renderMonths(); });
 $("#fd2").addEventListener("change", (ev) => { fD2 = ev.target.value; renderMonths(); });
 $("#fclear").addEventListener("click", () => {
-  fGame = fQ = fY = fD1 = fD2 = "";
+  fGame = fK = fT = fQ = fY = fD1 = fD2 = "";
+  $("#fk").value = ""; $("#ft").value = "";
   $("#q").value = ""; $("#fy").value = ""; $("#fd1").value = ""; $("#fd2").value = "";
   $("#fg").value = "";
   renderMonths();
@@ -697,7 +705,7 @@ const renderDetail = (e) => {
     <a class="back st" href="#events">◀ イベント情報へ</a>
     ${e.image ? `<figure class="dimg st" style="--c:${GC[e.game] || "var(--violet)"}"><img src="${esc(e.image)}" alt="${esc(e.name)}" loading="lazy" onerror="this.parentNode.remove()"></figure>` : ""}
     <div class="dhead st" style="--c:${GC[e.game] || "var(--violet)"}">
-      <div class="dtags"><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}</div>
+      <div class="dtags"><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}</div>
       <h2 class="dname">${esc(e.name)}</h2>
       <p class="ddate">${esc(e.date)}</p>
       <div class="dstat"><span class="lb">募集状況</span>${stChip(e.status || "調整中")}</div>
