@@ -639,7 +639,14 @@ const gameChips = (e, max = 3) => e.games.slice(0, max).map((g) => `<span class=
 // 開催日を過ぎたイベントは自動で「開催終了」。日付のないイベントは月が終わったら終了扱い
 const ymdLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const todayStr = ymdLocal(today), monthStr = todayStr.slice(0, 7);
-EV.forEach((e) => { e.ended = e.d ? e.d < todayStr : !!e.month && e.month < monthStr; if (e.ended) e.status = "開催終了"; });
+/* 2日間以上のイベント（日時に「2027/1/23（土）・1/24（日）」のように書いたもの）は、最後の日が過ぎてから終了にする */
+const lastDay = (e) => {
+  const t = String(e.date || ""), y = (/(\d{4})\D\d{1,2}\D\d{1,2}/.exec(t) || [])[1];
+  let last = e.d;
+  if (y && e.d) for (const m of t.matchAll(/(?:\d{4}\/)?(\d{1,2})\/(\d{1,2})/g)) { const s = `${y}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`; if (s > last) last = s; }
+  return last;
+};
+EV.forEach((e) => { e.ended = e.d ? lastDay(e) < todayStr : !!e.month && e.month < monthStr; if (e.ended) e.status = "開催終了"; });
 const SC = { "募集中": "var(--mint)", "募集前": "var(--cyan)", "締切": "var(--pink)", "開催終了": "#8a7cc0", "調整中": "#8a7cc0" };
 const fixed = (e) => e.confirmed === true;
 const tentChip = (e) => fixed(e) ? "" : '<span class="tent">確定前</span>';
