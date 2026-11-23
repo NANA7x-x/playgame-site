@@ -59,7 +59,7 @@ header.bar{position:fixed;top:0;left:0;right:0;z-index:40;background:#0b0814;bor
 .bar nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 .bar nav a{color:var(--ink);text-decoration:none;padding:9px 12px;border-radius:8px;border:2px solid transparent;font-size:15px}
 .bar nav a:hover{border-color:var(--pink);background:#ff3fd014}.bar nav a[aria-current=page]{border-color:var(--cyan);background:#2fd8ff1f;color:#fff}
-main{max-width:1180px;margin:auto;padding:0 max(4vw,14px)}
+main{max-width:1440px;margin:auto;padding:0 max(4vw,14px)}
 section.page{padding:clamp(28px,5vw,60px) 0 clamp(40px,6vw,80px)}section.page:not(.cur){display:none}
 h2{font:400 clamp(28px,4vw,40px)/1.1 "DotGothic16",monospace;margin:0 0 6px;text-wrap:balance}
 h2 .ic{display:inline-block;width:.9em;height:.9em;margin-right:.35em;vertical-align:-.05em;background:var(--c,var(--pink));box-shadow:4px 4px 0 #0008;clip-path:polygon(0 30%,30% 30%,30% 0,70% 0,70% 30%,100% 30%,100% 70%,70% 70%,70% 100%,30% 100%,30% 70%,0 70%)}
@@ -423,6 +423,31 @@ html[data-theme=light] .btn.alt,html[data-theme=light] .btn.alt:hover{color:var(
 .themebtn{min-height:40px;min-width:44px;margin-left:6px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);color:var(--ink);font-size:18px;cursor:pointer;line-height:1}
 .themebtn:hover{border-color:var(--cyan)}
 @media(max-width:760px){.bar .themebtn{order:2;margin-left:auto}.bar nav{order:3;width:100%;margin-left:0}}
+
+/* ---------- 詳細ページ：横長の画面では1画面に収める ---------- */
+.dhead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 24px;align-items:end;padding:clamp(16px,2vw,24px);margin-bottom:14px}
+.dhead .dtags{grid-column:1/-1}
+.dhead h2.dname{display:block;width:auto;font-size:clamp(24px,2.6vw,38px);line-height:1.25;text-wrap:pretty;word-break:auto-phrase;margin:6px 0 2px}
+.dname .sub{display:inline-block;font-size:.72em;opacity:.9}
+.ddate{margin:0;font-size:20px}
+.dstat{display:flex;align-items:center;gap:8px;justify-self:end}
+.dgrid{gap:14px}
+.dgrid .card{padding:clamp(16px,1.8vw,22px)}
+.dgrid .card h3{margin-top:0}
+@media(min-width:860px){.dgrid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+@media(min-width:1180px){.dgrid{grid-template-columns:1.9fr 1fr 1fr 1fr}}
+.dback{margin:0 0 0 auto!important;min-height:34px!important;padding:4px 12px!important;font-size:13px!important}
+.dmain{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 18px;min-width:0}
+.dhead{padding:clamp(14px,1.6vw,20px) clamp(16px,2vw,24px)}
+#detail.page{padding-top:clamp(14px,2vw,24px)}
+#detail .back{margin-bottom:10px;min-height:38px}
+.dgrid .spec{grid-template-columns:5em minmax(0,1fr);gap:8px 12px}
+.dgrid .spec dd{font-weight:600;font-size:15px}
+.dgrid .dl{gap:4px;font-size:15px}
+.dgrid .card h3{margin-bottom:10px}
+.c-ap .spec{grid-template-columns:minmax(0,1fr);gap:2px 0}.c-ap .spec dd{margin-bottom:8px}
+.dlinks{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+@media(max-width:620px){.dhead{grid-template-columns:minmax(0,1fr)}.dstat{justify-self:start}}
 </style>
 </head>
 <body>
@@ -608,6 +633,9 @@ const GC = { "VALORANT": "var(--pink)", "OW2": "var(--cyan)", "Apex": "var(--min
 const today = new Date();
 const EV = SITE.events;
 EV.forEach((e, i) => { e.id = e.id || `ev-${e.month}-${i}`; });
+// ゲームは「A／B／C」のように複数書ける。先頭のゲームを色に使う
+EV.forEach((e) => { e.games = String(e.game || "").split(/\s*[／/、,]\s*/).map((g) => g.trim()).filter(Boolean); e.game = e.games[0] || ""; });
+const gameChips = (e, max = 3) => e.games.slice(0, max).map((g) => `<span class="gm">${esc(g)}</span>`).join("") + (e.games.length > max ? `<span class="gm more">ほか${e.games.length - max}</span>` : "");
 // 開催日を過ぎたイベントは自動で「開催終了」。日付のないイベントは月が終わったら終了扱い
 const ymdLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const todayStr = ymdLocal(today), monthStr = todayStr.slice(0, 7);
@@ -618,8 +646,8 @@ const tentChip = (e) => fixed(e) ? "" : '<span class="tent">確定前</span>';
 const stChip = (st) => st ? `<span class="stc" style="--s:${SC[st] || "var(--violet)"}">${esc(st)}</span>` : "";
 const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sort((a, b) => a.d < b.d ? -1 : 1)[0];
 const nextMonth = nextEv ? nextEv.month : null;
-const GLIST = ["VALORANT", "OW2", "Apex", "Minecraft", "複数タイトル"];
-EV.forEach((e) => { if (e.game && !GLIST.includes(e.game)) GLIST.splice(GLIST.length - 1, 0, e.game); });
+const GLIST = ["VALORANT", "OW2", "Apex"];
+EV.forEach((e) => e.games.forEach((g) => { if (!GLIST.includes(g)) GLIST.push(g); }));
 let fPast = false, fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
 // 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
 const monthEnd = (m) => { const [y, mo] = m.split("-").map(Number); return `${m}-${String(new Date(y, mo, 0).getDate()).padStart(2, "0")}`; };
@@ -628,11 +656,13 @@ const inRange = (e) => {
   const from = e.d || `${e.month}-01`, to = e.d || monthEnd(e.month);
   return (!fD1 || to >= fD1) && (!fD2 || from <= fD2);
 };
-const qText = (e) => [e.name, e.detail, e.game, e.kind, e.who, e.date, e.type, e.d, e.d && e.d.replace(/-0?/g, "/"), e.month, e.month && e.month.replace("-", "年") + "月", e.month && (+e.month.slice(5)) + "月"].join(" ").toLowerCase();
+const qText = (e) => [e.name, e.detail, e.games.join(" "), e.kind, e.who, e.date, e.type, e.d, e.d && e.d.replace(/-0?/g, "/"), e.month, e.month && e.month.replace("-", "年") + "月", e.month && (+e.month.slice(5)) + "月"].join(" ").toLowerCase();
 const filtering = () => !!(fGame || fK || fT || fQ || fY || fD1 || fD2);
 // 「2月」「2027年2月」は月で探す（「12月」に当たらないように）
 const qMonth = (e) => { const m = /^(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月$/.exec(fQ); if (!m) return null; return (!m[1] || e.month.startsWith(m[1])) && +e.month.slice(5) === +m[2]; };
-const match = (e) => (fPast || !e.ended) && (!fGame || e.game === fGame) && (!fK || e.kind === fK) && (!fT || e.who === fT) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
+const match = (e) => (fPast || !e.ended) && (!fGame || e.games.includes(fGame)) && (!fK || e.kind === fK) && (!fT || e.who === fT) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
+// 「〜サブタイトル〜」は、入りきらないときだけまるごと次の行へ
+const nameHtml = (n) => { const m = /^(.*?)\s*([〜～~].*[〜～~])\s*$/.exec(n || ""); return m && m[1] ? `${esc(m[1])} <span class="sub">${esc(m[2])}</span>` : esc(n); };
 const kindChips = (e) => (e.kind ? `<span class="kd">${esc(e.kind)}</span>` : "") + (e.who && e.who !== "誰でも" ? `<span class="who">${esc(e.who)}</span>` : "");
 const renderMonths = () => {
 // 日付順（日付のないイベントはその月の最後）
@@ -645,12 +675,12 @@ const monthHtml = (m) => {
   const mainEv = list.find((e) => e.type === "メイン");
   const others = list.length - (mainEv ? 1 : 1);
   return `<details class="mon${isNext ? " next" : ""}" data-m="${m}"${isNext || filtering() ? " open" : ""}>
-    <summary><span class="mn"><b>${mo}</b>月</span><span class="my">${y}</span><span class="mt">${mainEv ? `<span class="mtn">${esc(mainEv.name)}</span>${mainEv.game ? `<span class="gm" style="--c:${GC[mainEv.game] || "var(--violet)"}">${esc(mainEv.game)}</span>` : ""}${tentChip(mainEv)}` : `<span class="mtn">${esc(list[0].name)}</span>`}</span>${isNext ? '<span class="nx">NEXT</span>' : ""}<span class="cnt">${others > 0 ? `ほか${others}件のイベント` : ""}</span><span class="chev" aria-hidden="true"></span></summary>
+    <summary><span class="mn"><b>${mo}</b>月</span><span class="my">${y}</span><span class="mt">${mainEv ? `<span class="mtn">${esc(mainEv.name)}</span>${mainEv.game ? `<span class="gm" style="--c:${GC[mainEv.game] || "var(--violet)"}">${esc(mainEv.game)}${mainEv.games.length > 1 ? " ほか" : ""}</span>` : ""}${tentChip(mainEv)}` : `<span class="mtn">${esc(list[0].name)}</span>`}</span>${isNext ? '<span class="nx">NEXT</span>' : ""}<span class="cnt">${others > 0 ? `ほか${others}件のイベント` : ""}</span><span class="chev" aria-hidden="true"></span></summary>
     <div class="evs">${list.map((e) => `
       <a class="evr${e === nextEv ? " isnext" : ""}" href="#${e.id}" style="--c:${GC[e.game] || "var(--violet)"}">
         <div class="when"><span class="lb">日時</span><span class="dt">${esc(e.date)}</span></div>
         <div class="what">
-          <div class="nm"><span class="lb">名前</span><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<p class="ttl">${esc(e.name)}</p></div>
+          <div class="nm"><span class="lb">名前</span><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${gameChips(e)}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<p class="ttl">${esc(e.name)}</p></div>
           <div class="dtl"><span class="lb">詳細</span><p>${lines2br(e.detail)}</p></div>
           ${e.note ? `<div class="rmk"><span class="lb">備考</span><p>${lines2br(e.note)}</p></div>` : ""}
           <div class="more">${stChip(e.status)}<span class="go">詳細を見る ▶</span></div>
@@ -663,7 +693,7 @@ const withYears = (ms) => { let last = ""; return ms.map((m) => { const y = m.sl
 // 終了したイベントはふだん出さない（「終了したイベントも表示」をオンにしたときだけ）
 $("#months").innerHTML = withYears(months);
 if (!SHOWN.length) $("#months").innerHTML = `<div class="empty"><b>NO EVENT</b>${fGame ? esc(fGame) + " のこれからのイベントは、まだ予定されていません。" : "条件に合うイベントが見つかりませんでした。"}${fPast ? "" : "<br><small>終了したイベントは「終了したイベントも表示」で見られます。</small>"}</div>`;
-const g = fGame && fGame !== "複数タイトル" ? fGame : "";
+const g = fGame;
 $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)"}">
   <div class="invt"><p class="invh">${g ? `<span class="gm">${esc(g)}</span> のイベントを開催してみませんか？` : "あなたの好きなゲームで、イベントを開催してみませんか？"}</p>
   <p class="invs">PGは、ゲームイベントの企画・運営・参加が気軽にできるコミュニティです。「こんな大会やりたい」「この企画を一緒にやりたい」など、Discordサーバーで気軽に相談してください。</p></div>
@@ -672,7 +702,7 @@ $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)
 $("#fg").innerHTML = `<option value="">すべてのゲーム</option>` + GLIST.map((g) => `<option value="${esc(g)}">${esc(g)}</option>`).join("");
 $("#fg").addEventListener("change", (ev) => { fGame = ev.target.value; renderMonths(); });
 // トップ：遊んでいるゲームのプルダウン。選ぶとそのゲームで絞り込んだイベント情報へ
-$("#gpick").innerHTML = `<option value="">ゲームを選んでイベントを見る（${GLIST.filter((g) => g !== "複数タイトル").length}タイトル）</option>` + GLIST.filter((g) => g !== "複数タイトル").map((g) => (() => { const n = EV.filter((e) => e.game === g).length; return `<option value="${esc(g)}">${esc(g)}${n ? `（${n}件）` : ""}</option>`; })()).join("");
+$("#gpick").innerHTML = `<option value="">ゲームを選んでイベントを見る（${GLIST.length}タイトル）</option>` + GLIST.map((g) => (() => { const n = EV.filter((e) => e.games.includes(g)).length; return `<option value="${esc(g)}">${esc(g)}${n ? `（${n}件）` : ""}</option>`; })()).join("");
 $("#gpick").addEventListener("change", (ev) => {
   const g = ev.target.value; if (!g) return;
   fGame = g; $("#fg").value = g; renderMonths();
@@ -713,27 +743,26 @@ const renderDetail = (e) => {
   const row = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
   const list = (a) => a && a.length ? `<ul class="dl">${a.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
   $("#detailBody").innerHTML = `
-    <a class="back st" href="#events">◀ イベント情報へ</a>
     ${e.image ? `<figure class="dimg st" style="--c:${GC[e.game] || "var(--violet)"}"><img src="${esc(e.image)}" alt="${esc(e.name)}" loading="lazy" onerror="this.parentNode.remove()"></figure>` : ""}
     <div class="dhead st" style="--c:${GC[e.game] || "var(--violet)"}">
-      <div class="dtags"><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}</div>
-      <h2 class="dname">${esc(e.name)}</h2>
-      <p class="ddate">${esc(e.date)}</p>
+      <div class="dtags"><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${gameChips(e)}${kindChips(e)}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}<a class="back dback" href="#events">◀ イベント一覧へ</a></div>
+      <div class="dmain"><h2 class="dname">${nameHtml(e.name)}</h2>
+      <p class="ddate">${esc(e.date)}</p></div>
       <div class="dstat"><span class="lb">募集状況</span>${stChip(e.status || "調整中")}</div>
     </div>
     <div class="dgrid">
-      <div class="card st" style="animation-delay:.06s"><h3>イベント概要</h3><dl class="spec">
-        ${row("日時", esc(e.date))}${row("ゲーム", esc(e.game || "—"))}${row("内容", rich(e.detail))}${row("定員", esc(e.capacity || ""))}
+      <div class="card st c-ov" style="animation-delay:.06s"><h3>イベント概要</h3><dl class="spec">
+        ${row("ゲーム", esc(e.games.join("／") || "—"))}${row("内容", rich(e.detail))}${row("定員", esc(e.capacity || ""))}${row("備考", e.note ? rich(e.note) : "")}
       </dl></div>
-      <div class="card st" style="animation-delay:.12s"><h3>募集</h3><dl class="spec">
-        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc(e.period || ""))}${row("参加方法", esc(e.apply || ""))}
-      </dl>${e.conditions && e.conditions.length ? `<h3 style="margin-top:18px">応募条件</h3>${list(e.conditions)}` : ""}</div>
-      ${e.rules && e.rules.length ? `<div class="card st" style="animation-delay:.18s"><h3>ルール</h3>${list(e.rules)}</div>` : ""}
-      ${e.note || (e.links && e.links.length) ? `<div class="card st" style="animation-delay:.22s"><h3>備考</h3>${e.note ? `<p style="margin:0">${rich(e.note)}</p>` : ""}<div class="row">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div></div>` : ""}
+      <div class="card st c-ap" style="animation-delay:.12s"><h3>募集</h3><dl class="spec">
+        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc((e.period || "").replace(/\s*[-〜～~]\s*(?=\d{4}\/)/, " 〜 ")))}${row("参加方法", esc(e.apply || ""))}
+      </dl></div>
+      ${e.conditions && e.conditions.length ? `<div class="card st c-cd" style="animation-delay:.18s"><h3>応募条件</h3>${list(e.conditions)}</div>` : ""}${e.rules && e.rules.length ? `<div class="card st c-rl" style="animation-delay:.22s"><h3>ルール</h3>${list(e.rules)}</div>` : ""}
+      ${(e.links || []).some((l) => l.url) ? `<div class="dlinks st">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div>` : ""}
     </div>
     <div class="dnav st">${prev ? `<a class="tbtn" href="#${prev.id}">◀ ${esc(prev.name)}</a>` : "<span></span>"}${next ? `<a class="tbtn" href="#${next.id}">${esc(next.name)} ▶</a>` : ""}</div>`;
 };
-if (nextEv) $("#nextbox").innerHTML = `<span class="badge">NEXT</span><span class="px">${esc(nextEv.date)}　${esc(nextEv.name)}${nextEv.game ? "（" + esc(nextEv.game) + "）" : ""}</span><a href="#${nextEv.id}">くわしく ▶</a>`;
+if (nextEv) $("#nextbox").innerHTML = `<span class="badge">NEXT</span><span class="px">${esc(nextEv.date)}　${esc(nextEv.name)}${nextEv.game ? "（" + esc(nextEv.games.join("／")) + "）" : ""}</span><a href="#${nextEv.id}">くわしく ▶</a>`;
 $("#arch").innerHTML = SITE.archive.length ? SITE.archive.map((a) => `
   <article class="card res"><p class="vol">${esc(a.name || a.vol)}</p><div class="date">${esc(a.date)}${a.game ? "・" + esc(a.game) : ""}</div>
     <ol>${a.results.map(([r, n], i) => `<li><span class="rk" style="--c:${COLS[i % 4]}">${esc(r)}</span>${esc(n)}</li>`).join("")}</ol>

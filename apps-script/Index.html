@@ -17,7 +17,7 @@ fieldset{border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0
 legend{padding:0 6px;color:var(--cyan);font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--sub)}
-label.full{grid-column:1/-1}
+label.full,.full{grid-column:1/-1}
 .req::after{content:" *";color:var(--pink)}
 input,select,textarea{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px;width:100%}
 textarea{min-height:96px;resize:vertical}
@@ -46,6 +46,10 @@ button:disabled{opacity:.5;cursor:wait}
 .imgprev{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--line);background:#000;margin-bottom:10px}
 .filebtn{display:inline-flex;flex-direction:row;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid var(--cyan);background:var(--panel2);color:var(--cyan);font-size:15px;cursor:pointer}
 .filebtn input{display:none}
+.tplbox{border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.tplrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tplbtn{min-height:36px;padding:6px 14px;border-radius:999px;border:1px solid var(--cyan);background:var(--panel2);color:var(--cyan);cursor:pointer}
+.tips{margin-top:6px;font-size:14px;color:var(--muted)}.tips summary{cursor:pointer}.tips ul{margin:6px 0 0;padding-left:20px}
 .done a.btnlink{display:block;text-align:center;text-decoration:none;font:inherit;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--panel2);color:var(--cyan)}
 </style>
 </head>
@@ -80,7 +84,7 @@ button:disabled{opacity:.5;cursor:wait}
         <label>種類<select name="種類"><option>メイン</option><option>小規模</option><option>Nexus Server</option></select></label>
         <label>形式<select name="形式"><option>大会</option><option>祭り</option><option>交流会</option></select><span class="hint">HPの「形式」の絞り込みに使います</span></label>
         <label>対象<select name="対象"><option>誰でも</option><option>配信者だけ</option><option>配信者と一般</option></select><span class="hint">HPの「対象」の絞り込みに使います</span></label>
-        <label>ゲーム<input name="ゲーム" list="games" placeholder="例：VALORANT、ストリートファイター6"><span class="hint">候補から選ぶか、リストにないゲームはそのまま入力できます</span></label>
+        <label>ゲーム<input name="ゲーム" list="games" placeholder="例：VALORANT　複数なら Party Animals／Gang Beasts"><span class="hint">具体的なゲーム名を書いてください（「いろいろ」「パーティゲーム」はNG）。複数のときは「／」で区切ります</span></label>
         <label class="check"><input type="checkbox" name="確定" value="済">内容が確定した（「確定前」の表示が消えます）</label>
       </div>
     </fieldset>
@@ -101,7 +105,17 @@ button:disabled{opacity:.5;cursor:wait}
 
     <fieldset><legend>内容</legend>
       <div class="grid">
-        <label class="full">詳細<textarea name="詳細" placeholder="どんなイベントか"></textarea></label>
+        <div class="full tplbox">
+          <div class="tplrow"><b>📝 ひな形</b><button type="button" class="tplbtn" data-t="大会">大会</button><button type="button" class="tplbtn" data-t="祭り">祭り</button><button type="button" class="tplbtn" data-t="交流会">交流会</button></div>
+          <p class="hint">押すと詳細に書き方の見本が入ります（ルール・応募条件・参加方法も、空なら一緒に入ります）。（　）の中を書きかえて、いらない行は消してください。</p>
+          <details class="tips"><summary>書き方のコツ</summary><ul>
+            <li>1行目に「どんなイベントか」をひとことで（HPの一覧とDiscordの告知でいちばん目に入ります）</li>
+            <li>長い文は書かずに、1行に1つずつ。「・」で始めると箇条書きっぽく読めます</li>
+            <li>日時・定員・募集期間は、それぞれの欄に書けばHPに表で出るので、詳細にはくり返さなくてOK</li>
+            <li>絵文字を見出しがわりにすると読みやすくなります（🏆 大会　🎉 祭り　🎮 交流会　📅 流れ　🎁 賞品）</li>
+          </ul></details>
+        </div>
+        <label class="full">詳細<textarea name="詳細" placeholder="どんなイベントか（上の「ひな形」を押すと見本が入ります）"></textarea></label>
         <label class="full">ルール<textarea name="ルール" placeholder="1行に1つ書くと、HPで箇条書きになります"></textarea></label>
         <label class="full">備考<textarea name="備考"></textarea></label>
       </div>
@@ -223,8 +237,8 @@ async function load(selectRow) {
     pick.length = 1;
     for (const e of events) pick.add(new Option(label(e), e.row));
     pick.value = selectRow ? String(selectRow) : '';
-    const games = new Set(['VALORANT', 'OW2', 'Apex', 'Minecraft', '複数タイトル']);
-    for (const e of events) if (e['ゲーム']) games.add(e['ゲーム']);
+    const games = new Set(['VALORANT', 'OW2', 'Apex', 'Minecraft']);
+    for (const e of events) for (const g of gameList(e['ゲーム'])) if (!VAGUE.test(g)) games.add(g);
     $('#games').innerHTML = '';
     for (const g of games) $('#games').append(new Option(g));
     fill(events.find((e) => e.row === +pick.value) || null);
@@ -261,6 +275,11 @@ async function save() {
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
   if (!data['日付'] && !data['月']) { msg('実施日（未定なら実施予定の月）を入れてください', 'ng'); return; }
+  const gl = gameList(data['ゲーム']);
+  if (!gl.length) { msg('ゲームを入れてください（複数なら「／」で区切ります）', 'ng'); return; }
+  const bad = gl.find((g) => VAGUE.test(g));
+  if (bad) { msg(`ゲームは「${bad}」ではなく、具体的なゲーム名を書いてください（例：Party Animals／Gang Beasts）`, 'ng'); return; }
+  data['ゲーム'] = gl.join('／');
   for (const k of ['リンクURL', '配信URL', '参加サーバー', '画像']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
   /* 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ） */
   const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
@@ -320,6 +339,37 @@ $('#imgFile').addEventListener('change', async (ev) => {
   } catch (err) { msg((err && err.message) || String(err), 'ng', '画像を入れられませんでした'); }
   busy(false);
 });
+/* 詳細のひな形 */
+const TPL = {
+  '大会': {
+    '詳細': '🏆 （どんな大会か、ひとことで）\n\n📅 当日の流れ\n・20:00 集合・ルール説明\n・20:15 試合開始\n・22:30ごろ 結果発表\n\n🎁 賞品・表彰\n・（優勝チームに〇〇、MVPに〇〇）\n\n💬 ひとこと\n（どんな人に来てほしいか、雰囲気など）',
+    'ルール': '試合形式：（トーナメント／総当たり／ポイント制）\n1試合の形式：（BO1など）\nマップ・モード：（運営が指定など）\n遅刻・欠席：（開始時刻にそろわないチームは不戦敗など）',
+    '応募条件': 'PGのDiscordサーバーに参加していること\nDiscordのVCで運営の話を聞けること\n当日の開始時刻から最後まで参加できること',
+    '参加方法': '（エントリーの方法）'
+  },
+  '祭り': {
+    '詳細': '🎉 （どんな祭りか、ひとことで）\n\n🎮 部屋の例\n・（ゲーム名）\n・（ゲーム名）\n\n📌 楽しみ方\n・好きな部屋に出入り自由\n・途中参加・途中抜けOK\n\n💬 ひとこと\n（初めての人へのメッセージなど）',
+    'ルール': '順位なし\n好きな部屋に出入り自由\n部屋ごとに担当の運営がいます',
+    '応募条件': 'PGのDiscordサーバーに参加していること',
+    '参加方法': '申込不要。当日、PGのDiscordのイベント用VCに来るだけでOK'
+  },
+  '交流会': {
+    '詳細': '🎮 （何をして遊ぶか、ひとことで）\n\n📌 こんな人におすすめ\n・（初めての人、〇〇が好きな人など）\n\n💬 ひとこと\n（雰囲気・用意するものなど）',
+    '応募条件': 'PGのDiscordサーバーに参加していること',
+    '参加方法': '申込不要。当日、PGのDiscordのイベント用VCに来るだけでOK'
+  }
+};
+for (const b of document.querySelectorAll('.tplbtn')) b.addEventListener('click', () => {
+  const t = TPL[b.dataset.t], el = form.elements['詳細'];
+  if (el.value.trim() && !confirm('いまの詳細を、ひな形で置きかえますか？')) return;
+  el.value = t['詳細'];
+  for (const k of ['ルール', '応募条件', '参加方法']) if (t[k] && !form.elements[k].value.trim()) form.elements[k].value = t[k];
+  form.elements['形式'].value = b.dataset.t;
+  el.focus(); el.setSelectionRange(0, 0);
+});
+/* ゲーム名のチェック（具体的なゲーム名だけ） */
+const VAGUE = /^(いろいろ|色々|パーティゲーム|協力ゲーム|スマホゲーム|Switch|スイッチ|人狼系|複数タイトル|未定|その他|ゲーム)$/i;
+const gameList = (v) => String(v || '').split(/\s*[／\/、,]\s*/).map((g) => g.trim()).filter(Boolean);
 load();
 </script>
 </body>
