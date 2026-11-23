@@ -205,6 +205,9 @@ a.evr:hover .go{color:var(--pink)}
 .stc{display:inline-block;font:13px "DotGothic16",monospace;color:#0b0814;background:var(--s);border-radius:6px;padding:2px 10px;white-space:nowrap}
 .back{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;margin-bottom:16px;border-radius:8px;border:2px solid var(--line);background:#0b0814eb;color:var(--ink);text-decoration:none;font:14px "DotGothic16",monospace}
 .back:hover{border-color:var(--cyan);color:var(--ink)}
+.dimg{margin:0 0 16px;border:2px solid var(--c);border-radius:16px;overflow:hidden;background:#0b0814;box-shadow:6px 6px 0 #000;display:flex;justify-content:center}
+.dimg img{display:block;max-width:100%;max-height:min(62vh,560px);height:auto}
+html[data-theme=light] .dimg{box-shadow:6px 6px 0 #21183a1c}
 .dhead{background:linear-gradient(135deg,#0b0814f2,color-mix(in srgb,var(--c) 22%,#0b0814));border:2px solid var(--c);border-radius:16px;padding:clamp(18px,3vw,30px);box-shadow:6px 6px 0 #000;margin-bottom:20px}
 .dtags{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .dhead h2.dname{background:none;border:0;box-shadow:none;padding:0;margin:10px 0 4px;font-size:clamp(30px,5vw,48px)}
@@ -570,7 +573,7 @@ const loadSheet = async () => {
     return { month: ym(r["月"]) || (d ? d.slice(0, 7) : ""), d, date: r["日時"] || (d ? d.replace(/-/g, "/") : "日程調整中"),
       type: r["種類"] || "メイン", game: r["ゲーム"], name: r["イベント名"] || "イベント名未定", detail: r["詳細"] || "未定",
       confirmed: /^(済|確定|○|◯|TRUE|true|yes|1)$/.test(r["確定"] || ""), status: r["募集状況"] || "調整中", period: r["募集期間"], capacity: r["定員"], conditions: lines(r["応募条件"]), apply: r["参加方法"],
-      rules: lines(r["ルール"]), note: r["備考"], links: r["リンクURL"] ? [{ label: r["リンク名"] || "くわしく", url: r["リンクURL"] }] : [] };
+      rules: lines(r["ルール"]), note: r["備考"], image: /^https:\/\/\S+$/.test(r["画像"] || "") ? r["画像"] : "", links: r["リンクURL"] ? [{ label: r["リンク名"] || "くわしく", url: r["リンクURL"] }] : [] };
   }).filter((e) => e.month);
   if (nw) window.SITE.news = nw.map((r) => ({ date: r["日付"], tag: r["タグ"], title: r["タイトル"], url: r["URL"] })).filter((n) => n.title);
   if (ar) window.SITE.archive = ar.map((r) => ({ name: r["イベント名"], date: r["日付"], game: r["ゲーム"],
@@ -692,6 +695,7 @@ const renderDetail = (e) => {
   const list = (a) => a && a.length ? `<ul class="dl">${a.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
   $("#detailBody").innerHTML = `
     <a class="back st" href="#events">◀ イベント情報へ</a>
+    ${e.image ? `<figure class="dimg st" style="--c:${GC[e.game] || "var(--violet)"}"><img src="${esc(e.image)}" alt="${esc(e.name)}" loading="lazy" onerror="this.parentNode.remove()"></figure>` : ""}
     <div class="dhead st" style="--c:${GC[e.game] || "var(--violet)"}">
       <div class="dtags"><span class="tg ${e.type === "メイン" ? "main" : ""}">${esc(e.type)}</span>${e.game ? `<span class="gm">${esc(e.game)}</span>` : ""}${tentChip(e)}${e === nextEv ? '<span class="nx">NEXT</span>' : ""}</div>
       <h2 class="dname">${esc(e.name)}</h2>

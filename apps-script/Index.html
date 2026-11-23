@@ -42,6 +42,10 @@ button:disabled{opacity:.5;cursor:wait}
 .done .nm{font-size:18px;font-weight:700;margin:6px 0 4px;word-break:break-word}
 .done .info{color:var(--sub);font-size:14px;margin:0 0 4px}
 .done .btns{display:flex;flex-direction:column;gap:10px;max-width:360px;margin:20px auto 0}
+.imgrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.imgprev{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--line);background:#000;margin-bottom:10px}
+.filebtn{display:inline-flex;flex-direction:row;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid var(--cyan);background:var(--panel2);color:var(--cyan);font-size:15px;cursor:pointer}
+.filebtn input{display:none}
 .done a.btnlink{display:block;text-align:center;text-decoration:none;font:inherit;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--panel2);color:var(--cyan)}
 </style>
 </head>
@@ -107,6 +111,17 @@ button:disabled{opacity:.5;cursor:wait}
       </div>
     </fieldset>
 
+    <fieldset><legend>画像</legend>
+      <img class="imgprev" id="imgPrev" alt="イベント画像のプレビュー" hidden>
+      <div class="imgrow">
+        <label class="filebtn">🖼 画像を選ぶ<input type="file" id="imgFile" accept="image/*"></label>
+        <button type="button" id="imgClear" hidden>画像を外す</button>
+      </div>
+      <div class="grid" style="margin-top:10px">
+        <label class="full">画像のURL（画像を選ぶと自動で入ります）<input name="画像" type="url" placeholder="https://..."><span class="hint">Discordの告知（募集開始・当日の朝）とHPのイベント詳細に出ます。横長（16:9くらい）がきれいに見えます。画像は登録した人のGoogleドライブ「PG イベント画像」に保存されます。</span></label>
+      </div>
+    </fieldset>
+
     <fieldset><legend>リンク</legend>
       <div class="grid">
         <label>リンク名<input name="リンク名" placeholder="エントリー"></label>
@@ -135,9 +150,9 @@ const run = (fn, ...args) => new Promise((ok, ng) => {
   const slow = setTimeout(() => { $('#msg').textContent = 'Googleからの返事を待っています…（30秒以上かかるときは、ページを開き直してください）'; }, 8000);
   google.script.run.withSuccessHandler((r) => { clearTimeout(slow); ok(r); }).withFailureHandler((e) => { clearTimeout(slow); ng(e); })[fn](...args);
 });
-const msg = (t, cls) => {
+const msg = (t, cls, title) => {
   const err = cls === 'ng';
-  $('#err').hidden = !err; $('#err').textContent = err ? '⚠ 保存できませんでした\n' + t : '';
+  $('#err').hidden = !err; $('#err').textContent = err ? '⚠ ' + (title || '保存できませんでした') + '\n' + t : '';
   $('#msg').textContent = err ? '' : t; $('#msg').className = err ? '' : (cls || '');
   if (err) $('#err').scrollIntoView({ block: 'center', behavior: 'smooth' });
 };
@@ -165,6 +180,7 @@ function fill(e) {
   $('#news').checked = !e;
   $('#newsLabel').textContent = e ? 'HPのお知らせに「情報を更新しました」を載せる' : 'HPのお知らせに「情報を公開しました」を載せる';
   syncMonth();
+  showImg();
   $('#save').textContent = e ? '変更を保存する' : '登録する';
   showAuto(e);
 }
@@ -219,7 +235,7 @@ async function save() {
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
   if (!data['日付'] && !data['月']) { msg('実施日（未定なら実施予定の月）を入れてください', 'ng'); return; }
-  for (const k of ['リンクURL', '配信URL', '参加サーバー']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
+  for (const k of ['リンクURL', '配信URL', '参加サーバー', '画像']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
   /* 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ） */
   const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
   if (data['日付'] && shown && toDate(shown[0]) !== data['日付']) {
@@ -241,6 +257,41 @@ $('#del').addEventListener('click', async () => {
   busy(true); msg('消しています…');
   try { await run('deleteEvent', current.row); await load(); msg('消しました。', 'ok'); }
   catch (err) { msg(err.message, 'ng'); }
+  busy(false);
+});
+/* 画像：選んだら横幅1600pxまでに縮めてGoogleドライブに保存し、URLを入れる */
+const imgInput = form.elements['画像'];
+function showImg() {
+  const u = imgInput.value.trim();
+  $('#imgPrev').hidden = !u; $('#imgClear').hidden = !u;
+  if (u) $('#imgPrev').src = u; else $('#imgPrev').removeAttribute('src');
+}
+imgInput.addEventListener('change', showImg);
+$('#imgPrev').addEventListener('error', () => { $('#imgPrev').hidden = true; });
+$('#imgClear').addEventListener('click', () => { imgInput.value = ''; showImg(); });
+const shrink = (file) => new Promise((ok, ng) => {
+  const img = new Image(), src = URL.createObjectURL(file);
+  img.onload = () => {
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const g = c.getContext('2d'); g.fillStyle = '#0b0814'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(src); ok(c.toDataURL('image/jpeg', 0.88));
+  };
+  img.onerror = () => { URL.revokeObjectURL(src); ng(new Error('この画像は読み込めませんでした。JPEG か PNG を選んでください。')); };
+  img.src = src;
+});
+$('#imgFile').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0]; ev.target.value = '';
+  if (!file) return;
+  busy(true); msg('画像を縮めています…');
+  try {
+    const data = await shrink(file);
+    msg('画像をアップロード中…');
+    imgInput.value = await run('uploadImage', data);
+    showImg();
+    msg('画像を入れました。「' + $('#save').textContent + '」を押すと反映されます。', 'ok');
+  } catch (err) { msg((err && err.message) || String(err), 'ng', '画像を入れられませんでした'); }
   busy(false);
 });
 load();
