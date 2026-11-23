@@ -173,7 +173,7 @@ footer{max-width:1180px;margin:auto;padding:32px max(4vw,14px) 48px;color:var(--
 .sbox input:focus{border-color:var(--cyan);outline:none}
 .sbox select{min-height:42px;font:16px "M PLUS 1p",sans-serif;color:var(--ink);background:var(--panel2);border:2px solid var(--line);border-radius:10px;padding:6px 10px}
 .sbox select:focus{border-color:var(--cyan);outline:none}
-.gsel{flex:0 1 260px}.ksel{flex:0 1 210px}.gpick{margin:16px 0 0;max-width:520px}.gpick select{flex:1;min-width:0}.ksel select{flex:1;min-width:0}
+.gsel{flex:0 1 260px}.ksel{flex:0 1 210px}.pcheck{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 6px;cursor:pointer;color:var(--sub);font-size:14px;white-space:nowrap}.pcheck input{width:20px;height:20px;accent-color:var(--pink)}.gpick{margin:16px 0 0;max-width:520px}.gpick select{flex:1;min-width:0}.ksel select{flex:1;min-width:0}
 .kd,.who{display:inline-block;font-size:12px;line-height:1;padding:4px 8px;border-radius:999px;margin-right:6px;vertical-align:middle;border:1px solid var(--line);color:var(--sub)}
 .who{border-color:var(--pink);color:var(--pink);font-weight:700}.gsel select{flex:1;min-width:0}
 .dfilter{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;flex:1 1 100%}
@@ -514,6 +514,7 @@ html[data-theme=light] .btn.alt,html[data-theme=light] .btn.alt:hover{color:var(
       <div class="dfilter">
         <label class="sbox ysel"><span class="lb">年</span><select id="fy" aria-label="年で絞り込み"></select></label>
         <label class="sbox dsel"><span class="lb">日付</span><input id="fd1" type="date" aria-label="この日から"><span class="til">〜</span><input id="fd2" type="date" aria-label="この日まで"></label>
+        <label class="pcheck"><input type="checkbox" id="fpast"><span>終了したイベントも表示</span></label>
         <button type="button" class="tbtn" id="fclear">条件をクリア</button>
       </div>
     </div>
@@ -607,6 +608,10 @@ const GC = { "VALORANT": "var(--pink)", "OW2": "var(--cyan)", "Apex": "var(--min
 const today = new Date();
 const EV = SITE.events;
 EV.forEach((e, i) => { e.id = e.id || `ev-${e.month}-${i}`; });
+// 開催日を過ぎたイベントは自動で「開催終了」。日付のないイベントは月が終わったら終了扱い
+const ymdLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const todayStr = ymdLocal(today), monthStr = todayStr.slice(0, 7);
+EV.forEach((e) => { e.ended = e.d ? e.d < todayStr : !!e.month && e.month < monthStr; if (e.ended) e.status = "開催終了"; });
 const SC = { "募集中": "var(--mint)", "募集前": "var(--cyan)", "締切": "var(--pink)", "開催終了": "#8a7cc0", "調整中": "#8a7cc0" };
 const fixed = (e) => e.confirmed === true;
 const tentChip = (e) => fixed(e) ? "" : '<span class="tent">確定前</span>';
@@ -615,7 +620,7 @@ const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sor
 const nextMonth = nextEv ? nextEv.month : null;
 const GLIST = ["VALORANT", "OW2", "Apex", "Minecraft", "複数タイトル"];
 EV.forEach((e) => { if (e.game && !GLIST.includes(e.game)) GLIST.splice(GLIST.length - 1, 0, e.game); });
-let fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
+let fPast = false, fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
 // 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
 const monthEnd = (m) => { const [y, mo] = m.split("-").map(Number); return `${m}-${String(new Date(y, mo, 0).getDate()).padStart(2, "0")}`; };
 const inRange = (e) => {
@@ -627,7 +632,7 @@ const qText = (e) => [e.name, e.detail, e.game, e.kind, e.who, e.date, e.type, e
 const filtering = () => !!(fGame || fK || fT || fQ || fY || fD1 || fD2);
 // 「2月」「2027年2月」は月で探す（「12月」に当たらないように）
 const qMonth = (e) => { const m = /^(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月$/.exec(fQ); if (!m) return null; return (!m[1] || e.month.startsWith(m[1])) && +e.month.slice(5) === +m[2]; };
-const match = (e) => (!fGame || e.game === fGame) && (!fK || e.kind === fK) && (!fT || e.who === fT) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
+const match = (e) => (fPast || !e.ended) && (!fGame || e.game === fGame) && (!fK || e.kind === fK) && (!fT || e.who === fT) && (!fY || e.month.startsWith(fY)) && inRange(e) && (!fQ || (qMonth(e) ?? qText(e).includes(fQ)));
 const kindChips = (e) => (e.kind ? `<span class="kd">${esc(e.kind)}</span>` : "") + (e.who && e.who !== "誰でも" ? `<span class="who">${esc(e.who)}</span>` : "");
 const renderMonths = () => {
 // 日付順（日付のないイベントはその月の最後）
@@ -655,11 +660,9 @@ const monthHtml = (m) => {
 };
 // 年が変わるところに見出しを入れる
 const withYears = (ms) => { let last = ""; return ms.map((m) => { const y = m.slice(0, 4), h = y !== last ? `<h3 class="yhead">${y}</h3>` : ""; last = y; return h + monthHtml(m); }).join(""); };
-// 絞り込み中は全部を日付順に。ふだんは「これから」を上に、終わった月は下にまとめて畳む
-const upcoming = filtering() ? months : months.filter((m) => m >= thisMonth);
-const past = filtering() ? [] : months.filter((m) => m < thisMonth).reverse();
-$("#months").innerHTML = withYears(upcoming) + (past.length ? `<details class="pastmon"><summary>終わった月（${past.length}）</summary>${withYears(past)}</details>` : "");
-if (!SHOWN.length) $("#months").innerHTML = `<div class="empty"><b>NO EVENT</b>${fGame ? esc(fGame) + " のイベントは、まだ予定されていません。" : "条件に合うイベントが見つかりませんでした。"}</div>`;
+// 終了したイベントはふだん出さない（「終了したイベントも表示」をオンにしたときだけ）
+$("#months").innerHTML = withYears(months);
+if (!SHOWN.length) $("#months").innerHTML = `<div class="empty"><b>NO EVENT</b>${fGame ? esc(fGame) + " のこれからのイベントは、まだ予定されていません。" : "条件に合うイベントが見つかりませんでした。"}${fPast ? "" : "<br><small>終了したイベントは「終了したイベントも表示」で見られます。</small>"}</div>`;
 const g = fGame && fGame !== "複数タイトル" ? fGame : "";
 $("#invite").innerHTML = `<div class="invc" style="--c:${GC[g] || "var(--violet)"}">
   <div class="invt"><p class="invh">${g ? `<span class="gm">${esc(g)}</span> のイベントを開催してみませんか？` : "あなたの好きなゲームで、イベントを開催してみませんか？"}</p>
@@ -676,6 +679,7 @@ $("#gpick").addEventListener("change", (ev) => {
   ev.target.value = "";
   location.hash = "#events";
 });
+$("#fpast").addEventListener("change", (ev) => { fPast = ev.target.checked; renderMonths(); });
 $("#fk").addEventListener("change", (ev) => { fK = ev.target.value; renderMonths(); });
 $("#ft").addEventListener("change", (ev) => { fT = ev.target.value; renderMonths(); });
 $("#q").addEventListener("input", (ev) => { fQ = ev.target.value.trim().toLowerCase(); renderMonths(); });
@@ -686,7 +690,7 @@ $("#fd1").addEventListener("change", (ev) => { fD1 = ev.target.value; renderMont
 $("#fd2").addEventListener("change", (ev) => { fD2 = ev.target.value; renderMonths(); });
 $("#fclear").addEventListener("click", () => {
   fGame = fK = fT = fQ = fY = fD1 = fD2 = "";
-  $("#fk").value = ""; $("#ft").value = "";
+  $("#fk").value = ""; $("#ft").value = ""; fPast = false; $("#fpast").checked = false;
   $("#q").value = ""; $("#fy").value = ""; $("#fd1").value = ""; $("#fd2").value = "";
   $("#fg").value = "";
   renderMonths();
