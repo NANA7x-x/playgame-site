@@ -90,7 +90,11 @@ button:disabled{opacity:.5;cursor:wait}
         <label>実施日<input type="date" name="日付"><span class="hint">まだ決まっていなければ空でOK</span></label>
         <label>開始時刻<input type="time" name="開始時刻"><span class="hint">入れると当日の朝と30分前に告知します</span></label>
         <label id="monthBox">実施予定の月（実施日が未定のとき）<input type="month" name="月"><span class="hint">実施日を入れたら不要です</span></label>
-        <label class="full">募集期間<input name="募集期間" placeholder="1/5〜1/20 23:59"><span class="hint">ここから募集開始・募集締切が自動で決まり、その日に告知します</span></label>
+        <label>募集開始日<input type="date" id="p1d"><span class="hint">この日の朝9時に「募集開始」を告知します</span></label>
+        <label>募集開始の時刻（任意）<input type="time" id="p1t"><span class="hint">入れるとその時刻に告知します</span></label>
+        <label>募集締切日<input type="date" id="p2d"><span class="hint">この日の朝9時に「今日が締切」を告知します</span></label>
+        <label>締切の時刻（任意）<input type="time" id="p2t"><span class="hint">空ならその日いっぱい</span></label>
+        <input type="hidden" name="募集期間"><p class="hint full" id="pOld" hidden></p>
         <label class="full">HPに出す日にちの書き方（ふだんは空でOK）<input name="日時" placeholder="空なら実施日から自動で「2026/11/22（日）」"><span class="hint">「1月中（日程調整中）」のように書きたいときだけ使います</span></label>
       </div>
     </fieldset>
@@ -181,15 +185,34 @@ function fill(e) {
   $('#del').hidden = !e;
   $('#news').checked = !e;
   $('#newsLabel').textContent = e ? 'HPのお知らせに「情報を更新しました」を載せる' : 'HPのお知らせに「情報を公開しました」を載せる';
+  periodToInputs(form.elements['募集期間'].value);
   syncMonth();
   showImg();
   $('#save').textContent = e ? '変更を保存する' : '登録する';
   showAuto(e);
 }
+/* 募集期間はシートに「2026/11/04-2026/12/05」（時刻つきなら「2026/11/04 12:00-2026/12/05 23:59」）の形で入れる */
+const PERIOD = /(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\s*(\d{1,2}:\d{2}))?\s*[-〜～~－]\s*(\d{4})\D(\d{1,2})\D(\d{1,2})(?:\s*(\d{1,2}:\d{2}))?/;
+const ymd = (y, m, d) => `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+function periodToInputs(v) {
+  const m = PERIOD.exec(v || '');
+  $('#p1d').value = m ? ymd(m[1], m[2], m[3]) : ''; $('#p1t').value = m && m[4] ? toTime(m[4]) : '';
+  $('#p2d').value = m ? ymd(m[5], m[6], m[7]) : ''; $('#p2t').value = m && m[8] ? toTime(m[8]) : '';
+  $('#pOld').hidden = !(v && !m);
+  $('#pOld').textContent = v && !m ? `前の書き方の募集期間：「${v}」→ 上の日付で選び直してください` : '';
+}
+function inputsToPeriod() {
+  const d1 = $('#p1d').value, d2 = $('#p2d').value, t1 = $('#p1t').value, t2 = $('#p2t').value;
+  if (!d1 && !d2) return $('#pOld').hidden ? '' : form.elements['募集期間'].value;
+  if (!d1 || !d2) throw new Error('募集期間は「募集開始日」と「募集締切日」の両方を入れてください（募集しないなら両方とも空に）');
+  if (d1 + (t1 || '') > d2 + (t2 || '99')) throw new Error('募集締切日が募集開始日より前になっています');
+  const sl = (d) => d.replace(/-/g, '/');
+  return `${sl(d1)}${t1 ? ' ' + t1 : ''}-${sl(d2)}${t2 ? ' ' + t2 : ''}`;
+}
 function showAuto(e) {
   $('#auto').innerHTML = e && (e['募集開始'] || e['募集締切'])
     ? `募集開始（自動）<b>${e['募集開始'] || '—'}</b>　募集締切（自動）<b>${e['募集締切'] || '—'}</b>`
-    : '保存すると、募集期間から募集開始・募集締切が自動で入ります。';
+    : '保存すると、募集開始日・募集締切日がシートに入り、その日に告知されます。';
 }
 function label(e) { return `${e['日付'] || e['日時'] || e['月'] || ''}　${e['イベント名'] || '（名前なし）'}`; }
 async function load(selectRow) {
@@ -233,6 +256,7 @@ $('#again').addEventListener('click', () => { $('#pick').value = ''; fill(null);
 $('#editMore').addEventListener('click', () => { msg(''); showEditor(); });
 async function save() {
   if (saving) return;
+  try { form.elements['募集期間'].value = inputsToPeriod(); } catch (err) { msg(err.message, 'ng'); return; }
   const data = {};
   for (const el of form.elements) if (el.name) data[el.name] = el.type === 'checkbox' ? (el.checked ? '済' : '') : el.value;
   if (!data['イベント名'].trim()) { msg('イベント名を入れてください', 'ng'); return; }
