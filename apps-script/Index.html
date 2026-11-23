@@ -126,7 +126,17 @@ button:disabled{opacity:.5;cursor:wait}
         <label>募集状況<select name="募集状況"><option>調整中</option><option>募集前</option><option>募集中</option><option>締切</option><option>開催終了</option></select></label>
         <label>定員<input name="定員" placeholder="8チーム"></label>
         <label class="full">応募条件<textarea name="応募条件" placeholder="1行に1つ書くと、HPで箇条書きになります"></textarea></label>
-        <label class="full">参加方法<textarea name="参加方法" placeholder="Discordのエントリーチャンネルで申請"></textarea></label>
+        <label class="full">参加方法<textarea name="参加方法" placeholder="Discordの募集開始のお知らせにある「📝 エントリー」ボタンから申し込み"></textarea></label>
+        <div class="full tplbox">
+          <b>📝 Discordのエントリーボタン</b>
+          <p class="hint">「申込単位」を入れると、募集開始・募集締切の告知に「📝 エントリー」ボタンが付き、NANA Supportで申し込みを受け付けます（申込不要のイベントは空のまま）。</p>
+          <div class="grid" style="margin-top:8px">
+            <label>申込単位<input name="申込単位" list="units" placeholder="例：チーム（5人）／個人"><span class="hint">チーム・部隊なら代表者が1回申し込む形になります</span></label>
+            <label>受付上限（任意）<input name="受付上限" inputmode="numeric" placeholder="空なら定員の数字"><span class="hint">申し込みの件数で数えます。超えても申し込めますが「参加できない可能性があります」と表示されます</span></label>
+            <label class="full">入力してもらう項目<textarea name="入力項目" rows="2" placeholder="チーム名／代表者のRiot ID／メンバー全員のRiot ID（1行に1人）／ひとこと（任意）"></textarea><span class="hint">「／」で区切って最大5つ。1つ45文字まで。「（任意）」を付けた項目は空でもOK。「メンバー」「ひとこと」などを含む項目は複数行で書ける欄になります。空なら申込単位に合わせた標準の項目を使います</span></label>
+            <div class="full tplrow"><span class="hint">よく使う項目：</span><button type="button" class="tplbtn" data-f="valo">VALORANTのチーム</button><button type="button" class="tplbtn" data-f="apex">Apexの部隊</button><button type="button" class="tplbtn" data-f="ow">OW2のチーム</button><button type="button" class="tplbtn" data-f="solo">個人</button></div>
+          </div>
+        </div>
         <div class="auto full" id="auto"></div>
       </div>
     </fieldset>
@@ -160,6 +170,7 @@ button:disabled{opacity:.5;cursor:wait}
     </div>
   </form>
   </div>
+  <datalist id="units"><option>チーム（5人）</option><option>部隊（3人）</option><option>個人</option><option>ペア（2人）</option></datalist>
   <datalist id="games"><option>VALORANT</option><option>OW2</option><option>Apex</option><option>Minecraft</option><option>複数タイトル</option></datalist>
 </main>
 <script>
@@ -280,6 +291,9 @@ async function save() {
   const bad = gl.find((g) => VAGUE.test(g));
   if (bad) { msg(`ゲームは「${bad}」ではなく、具体的なゲーム名を書いてください（例：Party Animals／Gang Beasts）`, 'ng'); return; }
   data['ゲーム'] = gl.join('／');
+  const ef = checkEntryFields(data['入力項目']);
+  if (ef) { msg(ef, 'ng'); return; }
+  if (data['受付上限'] && !/^\d+$/.test(data['受付上限'].trim())) { msg('受付上限は数字だけで書いてください（例：40）', 'ng'); return; }
   for (const k of ['リンクURL', '配信URL', '参加サーバー', '画像']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
   /* 「日付」と「日時」の日にちが食い違っていたら止める（年の選び間違いを防ぐ） */
   const shown = /(\d{4})\D(\d{1,2})\D(\d{1,2})/.exec(data['日時'] || '');
@@ -345,7 +359,7 @@ const TPL = {
     '詳細': '🏆 （どんな大会か、ひとことで）\n\n📅 当日の流れ\n・20:00 集合・ルール説明\n・20:15 試合開始\n・22:30ごろ 結果発表\n\n🎁 賞品・表彰\n・（優勝チームに〇〇、MVPに〇〇）\n\n💬 ひとこと\n（どんな人に来てほしいか、雰囲気など）',
     'ルール': '試合形式：（トーナメント／総当たり／ポイント制）\n1試合の形式：（BO1など）\nマップ・モード：（運営が指定など）\n遅刻・欠席：（開始時刻にそろわないチームは不戦敗など）',
     '応募条件': 'PGのDiscordサーバーに参加していること\nDiscordのVCで運営の話を聞けること\n当日の開始時刻から最後まで参加できること',
-    '参加方法': '（エントリーの方法）'
+    '参加方法': 'Discordの募集開始のお知らせにある「📝 エントリー」ボタンから申し込み（代表者が1回申し込めばOK）'
   },
   '祭り': {
     '詳細': '🎉 （どんな祭りか、ひとことで）\n\n🎮 部屋の例\n・（ゲーム名）\n・（ゲーム名）\n\n📌 楽しみ方\n・好きな部屋に出入り自由\n・途中参加・途中抜けOK\n\n💬 ひとこと\n（初めての人へのメッセージなど）',
@@ -359,7 +373,7 @@ const TPL = {
     '参加方法': '申込不要。当日、PGのDiscordのイベント用VCに来るだけでOK'
   }
 };
-for (const b of document.querySelectorAll('.tplbtn')) b.addEventListener('click', () => {
+for (const b of document.querySelectorAll('.tplbtn[data-t]')) b.addEventListener('click', () => {
   const t = TPL[b.dataset.t], el = form.elements['詳細'];
   if (el.value.trim() && !confirm('いまの詳細を、ひな形で置きかえますか？')) return;
   el.value = t['詳細'];
@@ -367,6 +381,25 @@ for (const b of document.querySelectorAll('.tplbtn')) b.addEventListener('click'
   form.elements['形式'].value = b.dataset.t;
   el.focus(); el.setSelectionRange(0, 0);
 });
+/* エントリーの入力項目の見本 */
+const FSET = {
+  valo: ['チーム（5人）', 'チーム名／代表者のRiot ID（例：NANA#0000）／メンバー全員のRiot ID（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
+  apex: ['部隊（3人）', '部隊名／代表者のEA ID／メンバー3人のEA ID（1行に1人）／ひとこと（任意）'],
+  ow: ['チーム（5人）', 'チーム名／代表者のBattleTag（例：NANA#1234）／メンバー全員のBattleTag（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
+  solo: ['個人', 'ゲーム内ID／ランク（任意）／ひとこと（任意）']
+};
+for (const b of document.querySelectorAll('[data-f]')) b.addEventListener('click', () => {
+  const [u, f] = FSET[b.dataset.f];
+  if (form.elements['入力項目'].value.trim() && !confirm('いまの入力項目を置きかえますか？')) return;
+  form.elements['申込単位'].value = u; form.elements['入力項目'].value = f;
+});
+function checkEntryFields(v) {
+  const list = String(v || '').split(/\s*[／\n]\s*/).filter(Boolean);
+  if (list.length > 5) return `入力してもらう項目は5つまでです（いま${list.length}つ）`;
+  const long = list.find((x) => x.length > 45);
+  if (long) return `入力項目「${long.slice(0, 20)}…」が長すぎます（1つ45文字まで）`;
+  return '';
+}
 /* ゲーム名のチェック（具体的なゲーム名だけ） */
 const VAGUE = /^(いろいろ|色々|パーティゲーム|協力ゲーム|スマホゲーム|Switch|スイッチ|人狼系|複数タイトル|未定|その他|ゲーム)$/i;
 const gameList = (v) => String(v || '').split(/\s*[／\/、,]\s*/).map((g) => g.trim()).filter(Boolean);
