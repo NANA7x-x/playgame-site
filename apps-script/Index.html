@@ -134,7 +134,8 @@ button:disabled{opacity:.5;cursor:wait}
             <label>申込単位<input name="申込単位" list="units" placeholder="例：チーム（5人）／個人"><span class="hint">チーム・部隊なら代表者が1回申し込む形になります</span></label>
             <label>受付上限（任意）<input name="受付上限" inputmode="numeric" placeholder="空なら定員の数字"><span class="hint">申し込みの件数で数えます。超えても申し込めますが「参加できない可能性があります」と表示されます</span></label>
             <label class="full">入力してもらう項目<textarea name="入力項目" rows="2" placeholder="チーム名／代表者のRiot ID／メンバー全員のRiot ID（1行に1人）／ひとこと（任意）"></textarea><span class="hint">「／」で区切って最大5つ。1つ45文字まで。「（任意）」を付けた項目は空でもOK。「メンバー」「ひとこと」などを含む項目は複数行で書ける欄になります。空なら申込単位に合わせた標準の項目を使います</span></label>
-            <div class="full tplrow"><span class="hint">よく使う項目：</span><button type="button" class="tplbtn" data-f="valo">VALORANTのチーム</button><button type="button" class="tplbtn" data-f="apex">Apexの部隊</button><button type="button" class="tplbtn" data-f="ow">OW2のチーム</button><button type="button" class="tplbtn" data-f="solo">個人</button></div>
+            <label class="full">メンバーごとに入れてもらう項目（チームでメンバー登録するときだけ）<textarea name="メンバー項目" rows="2" placeholder="活動名と読み方／VALORANTユーザー名#タグ／最高ランク・現在ランク／tracker.gg のURL"></textarea><span class="hint">ここを書くと、リーダーがチームを申し込んだあと、メンバーをDiscordのアカウントで選んで1人ずつ登録する形になります（Discord名・アイコンは自動）。人数は申込単位の数字で決まります（例：「チーム（5人＋補欠1人）」→5人で完了・6人まで）。「／」区切りで最大5つ</span></label>
+            <div class="full tplrow"><span class="hint">よく使う項目：</span><button type="button" class="tplbtn" data-f="valoTeam">VALORANTのチーム（メンバー登録）</button><button type="button" class="tplbtn" data-f="valo">VALORANTのチーム</button><button type="button" class="tplbtn" data-f="apex">Apexの部隊</button><button type="button" class="tplbtn" data-f="ow">OW2のチーム</button><button type="button" class="tplbtn" data-f="solo">個人</button></div>
           </div>
         </div>
         <div class="auto full" id="auto"></div>
@@ -291,7 +292,7 @@ async function save() {
   const bad = gl.find((g) => VAGUE.test(g));
   if (bad) { msg(`ゲームは「${bad}」ではなく、具体的なゲーム名を書いてください（例：Party Animals／Gang Beasts）`, 'ng'); return; }
   data['ゲーム'] = gl.join('／');
-  const ef = checkEntryFields(data['入力項目']);
+  const ef = checkEntryFields(data['入力項目']) || checkEntryFields(data['メンバー項目']);
   if (ef) { msg(ef, 'ng'); return; }
   if (data['受付上限'] && !/^\d+$/.test(data['受付上限'].trim())) { msg('受付上限は数字だけで書いてください（例：40）', 'ng'); return; }
   for (const k of ['リンクURL', '配信URL', '参加サーバー', '画像']) if (data[k] && !/^https?:\x2f\x2f/.test(data[k])) { msg(`${k} は https: で始まるURLを書いてください`, 'ng'); return; }
@@ -386,12 +387,13 @@ const FSET = {
   valo: ['チーム（5人）', 'チーム名／代表者のRiot ID（例：NANA#0000）／メンバー全員のRiot ID（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
   apex: ['部隊（3人）', '部隊名／代表者のEA ID／メンバー3人のEA ID（1行に1人）／ひとこと（任意）'],
   ow: ['チーム（5人）', 'チーム名／代表者のBattleTag（例：NANA#1234）／メンバー全員のBattleTag（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
-  solo: ['個人', 'ゲーム内ID／ランク（任意）／ひとこと（任意）']
+  solo: ['個人', 'ゲーム内ID／ランク（任意）／ひとこと（任意）'],
+  valoTeam: ['チーム（5人＋補欠1人）', 'チーム名／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／VALORANTユーザー名#タグ（例：NANA#0000）／最高ランク・現在ランク（例：ダイヤ2・プラチナ3）／VALORANT tracker.gg のURL']
 };
 for (const b of document.querySelectorAll('[data-f]')) b.addEventListener('click', () => {
-  const [u, f] = FSET[b.dataset.f];
+  const [u, f, mf] = FSET[b.dataset.f];
   if (form.elements['入力項目'].value.trim() && !confirm('いまの入力項目を置きかえますか？')) return;
-  form.elements['申込単位'].value = u; form.elements['入力項目'].value = f;
+  form.elements['申込単位'].value = u; form.elements['入力項目'].value = f; form.elements['メンバー項目'].value = mf || '';
 });
 function checkEntryFields(v) {
   const list = String(v || '').split(/\s*[／\n]\s*/).filter(Boolean);
