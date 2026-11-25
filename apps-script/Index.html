@@ -48,6 +48,11 @@ button:disabled{opacity:.5;cursor:wait}
 .filebtn input{display:none}
 .tplbox{border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
 .tplrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pvrow{display:flex;flex-wrap:wrap;gap:10px}
+.pv{flex:1 1 260px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:rgba(88,101,242,.08)}
+.pv b{display:block;font-size:13px;margin-bottom:6px}
+.pvf{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:5px 8px;margin:4px 0;border-radius:6px;background:rgba(0,0,0,.18)}
+.pvf i{font-style:normal;opacity:.7;white-space:nowrap}
 .tplbtn{min-height:36px;padding:6px 14px;border-radius:999px;border:1px solid var(--cyan);background:var(--panel2);color:var(--cyan);cursor:pointer}
 .tips{margin-top:6px;font-size:14px;color:var(--muted)}.tips summary{cursor:pointer}.tips ul{margin:6px 0 0;padding-left:20px}
 .done a.btnlink{display:block;text-align:center;text-decoration:none;font:inherit;border-radius:10px;padding:10px 18px;border:1px solid var(--line);background:var(--panel2);color:var(--cyan)}
@@ -128,14 +133,27 @@ button:disabled{opacity:.5;cursor:wait}
         <label class="full">応募条件<textarea name="応募条件" placeholder="1行に1つ書くと、HPで箇条書きになります"></textarea></label>
         <label class="full">参加方法<textarea name="参加方法" placeholder="Discordの募集開始のお知らせにある「📝 エントリー」ボタンから申し込み"></textarea></label>
         <div class="full tplbox">
-          <b>📝 Discordのエントリーボタン</b>
-          <p class="hint">「申込単位」を入れると、募集開始・募集締切の告知に「📝 エントリー」ボタンが付き、NANA Supportで申し込みを受け付けます（申込不要のイベントは空のまま）。</p>
+          <b>📝 Discordのエントリー（申し込み）</b>
+          <div class="tplrow" style="margin:6px 0 4px"><span class="hint">受付のしかた：</span>
+            <button type="button" class="tplbtn" data-mode="none">申込不要</button>
+            <button type="button" class="tplbtn" data-mode="solo">ひとりずつ申し込み</button>
+            <button type="button" class="tplbtn" data-mode="team">代表者がチームでまとめて</button>
+            <button type="button" class="tplbtn" data-mode="roster">リーダーが申し込み＋メンバーが各自入力</button>
+          </div>
+          <div class="tplrow"><span class="hint">ゲーム別の見本：</span>
+            <button type="button" class="tplbtn" data-f="valoTeam">VALORANT 5人＋補欠</button>
+            <button type="button" class="tplbtn" data-f="apexTeam">Apex 3人</button>
+            <button type="button" class="tplbtn" data-f="owTeam">OW2 5人＋補欠</button>
+            <button type="button" class="tplbtn" data-f="solo">個人（ドラフトなど）</button>
+          </div>
           <div class="grid" style="margin-top:8px">
-            <label>申込単位<input name="申込単位" list="units" placeholder="例：チーム（5人）／個人"><span class="hint">チーム・部隊なら代表者が1回申し込む形になります</span></label>
-            <label>受付上限（任意）<input name="受付上限" inputmode="numeric" placeholder="空なら定員の数字"><span class="hint">申し込みの件数で数えます。超えても申し込めますが「参加できない可能性があります」と表示されます</span></label>
-            <label class="full">入力してもらう項目<textarea name="入力項目" rows="2" placeholder="チーム名／代表者のRiot ID／メンバー全員のRiot ID（1行に1人）／ひとこと（任意）"></textarea><span class="hint">「／」で区切って最大5つ。1つ45文字まで。「（任意）」を付けた項目は空でもOK。「メンバー」「ひとこと」などを含む項目は複数行で書ける欄になります。空なら申込単位に合わせた標準の項目を使います</span></label>
-            <label class="full">メンバーごとに入れてもらう項目（チームでメンバー登録するときだけ）<textarea name="メンバー項目" rows="2" placeholder="活動名と読み方／VALORANTユーザー名#タグ／最高ランク・現在ランク／tracker.gg のURL"></textarea><span class="hint">ここを書くと、リーダーがチームを申し込んだあと、メンバーをDiscordのアカウントで選んで1人ずつ登録する形になります（Discord名・アイコンは自動）。人数は申込単位の数字で決まります（例：「チーム（5人＋補欠1人）」→5人で完了・6人まで）。「／」区切りで最大5つ</span></label>
-            <div class="full tplrow"><span class="hint">よく使う項目：</span><button type="button" class="tplbtn" data-f="valoTeam">VALORANTのチーム（メンバー登録）</button><button type="button" class="tplbtn" data-f="valo">VALORANTのチーム</button><button type="button" class="tplbtn" data-f="apex">Apexの部隊</button><button type="button" class="tplbtn" data-f="ow">OW2のチーム</button><button type="button" class="tplbtn" data-f="solo">個人</button></div>
+            <label>申込単位<input name="申込単位" list="units" placeholder="空なら申込不要（ボタンなし）"><span class="hint">「チーム（5人＋補欠1人）」なら5人で完了・6人まで。空のイベントにはエントリーボタンが付きません</span></label>
+            <label>受付上限（任意）<input name="受付上限" inputmode="numeric" placeholder="空なら定員の数字"><span class="hint">申し込み（チーム）の件数。超えても申し込めますが「参加できない可能性があります」と表示されます</span></label>
+            <label class="full">申し込む人が入れる項目<textarea name="入力項目" rows="2" placeholder="チーム名（任意）／運営に共有しておきたいこと（任意）"></textarea><span class="hint">「／」区切りで最大5つ・1つ45文字まで。「（任意）」を付けると空でもOK</span></label>
+            <label class="full" id="mfRow">メンバーが各自入れる項目<textarea name="メンバー項目" rows="2" placeholder="活動名と読み方／VALORANTユーザー名#タグ／最高ランク・現在ランク／tracker.gg のURL"></textarea><span class="hint">書くと「リーダーが申し込み＋メンバーが各自入力」の形になります。Discord名・アイコンは自動</span></label>
+            <label>参加者ロール（任意）<input name="参加者ロール" placeholder="例：PGP VALORANT LEAGUE 01"><span class="hint">エントリーした人に付けるロール。なければBOTが作ります</span></label>
+            <label>チームロール（任意）<input name="チームロール" placeholder="例：T{番号}|{チーム名}"><span class="hint">{番号}→チーム番号、{チーム名}→チーム名。チーム名が空なら「T1」だけになります</span></label>
+            <div class="full" id="entryPreview"></div>
           </div>
         </div>
         <div class="auto full" id="auto"></div>
@@ -212,6 +230,7 @@ function fill(e) {
   $('#news').checked = !e;
   $('#newsLabel').textContent = e ? 'HPのお知らせに「情報を更新しました」を載せる' : 'HPのお知らせに「情報を公開しました」を載せる';
   periodToInputs(form.elements['募集期間'].value);
+  if (typeof entryPreview === 'function') entryPreview();
   syncMonth();
   showImg();
   $('#save').textContent = e ? '変更を保存する' : '登録する';
@@ -384,17 +403,56 @@ for (const b of document.querySelectorAll('.tplbtn[data-t]')) b.addEventListener
 });
 /* エントリーの入力項目の見本 */
 const FSET = {
-  valo: ['チーム（5人）', 'チーム名／代表者のRiot ID（例：NANA#0000）／メンバー全員のRiot ID（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
-  apex: ['部隊（3人）', '部隊名／代表者のEA ID／メンバー3人のEA ID（1行に1人）／ひとこと（任意）'],
-  ow: ['チーム（5人）', 'チーム名／代表者のBattleTag（例：NANA#1234）／メンバー全員のBattleTag（1行に1人）／メンバー全員のランク（1行に1人）／ひとこと（任意）'],
-  solo: ['個人', 'ゲーム内ID／ランク（任意）／ひとこと（任意）'],
-  valoTeam: ['チーム（5人＋補欠1人）', 'チーム名／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／VALORANTユーザー名#タグ（例：NANA#0000）／最高ランク・現在ランク（例：ダイヤ2・プラチナ3）／VALORANT tracker.gg のURL']
+  valoTeam: ['チーム（5人＋補欠1人）', 'チーム名（任意）／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／VALORANTユーザー名#タグ（例：NANA#0000）／最高ランク・現在ランク（例：ダイヤ2・プラチナ3）／VALORANT tracker.gg のURL', 'T{番号}|{チーム名}'],
+  apexTeam: ['部隊（3人）', '部隊名（任意）／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／EA ID／最高ランク・現在ランク（例：ダイヤ2・プラチナ1）', 'T{番号}|{チーム名}'],
+  owTeam: ['チーム（5人＋補欠1人）', 'チーム名（任意）／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／BattleTag（例：NANA#1234）／ランク・得意なロール（例：ダイヤ・サポート）', 'T{番号}|{チーム名}'],
+  solo: ['個人', '活動名と読み方（例：なな・ナナ）／ゲーム内ID／ランク（任意）／運営に共有しておきたいこと（任意）', '', '']
 };
-for (const b of document.querySelectorAll('[data-f]')) b.addEventListener('click', () => {
-  const [u, f, mf] = FSET[b.dataset.f];
-  if (form.elements['入力項目'].value.trim() && !confirm('いまの入力項目を置きかえますか？')) return;
-  form.elements['申込単位'].value = u; form.elements['入力項目'].value = f; form.elements['メンバー項目'].value = mf || '';
-});
+const MODE = {
+  none: ['', '', '', ''],
+  solo: ['個人', '活動名と読み方（例：なな・ナナ）／ゲーム内ID／運営に共有しておきたいこと（任意）', '', ''],
+  team: ['チーム（5人）', 'チーム名／代表者のゲーム内ID／メンバー全員のゲーム内ID（1行に1人）／運営に共有しておきたいこと（任意）', '', ''],
+  roster: ['チーム（5人＋補欠1人）', 'チーム名（任意）／運営に共有しておきたいこと（任意）', '活動名と読み方（例：なな・ナナ）／ゲーム内ID／ランク', 'T{番号}|{チーム名}']
+};
+function setEntry(v) {
+  const f = form.elements;
+  if ((f['入力項目'].value.trim() || f['メンバー項目'].value.trim()) && !confirm('いまのエントリーの設定を置きかえますか？')) return;
+  f['申込単位'].value = v[0]; f['入力項目'].value = v[1]; f['メンバー項目'].value = v[2]; f['チームロール'].value = v[3];
+  if (v[0] && !f['参加者ロール'].value.trim()) f['参加者ロール'].value = (f['イベント名'].value || '').replace(/\s*〜.*$/, '').trim();
+  if (!v[0]) f['参加者ロール'].value = '';
+  entryPreview();
+}
+for (const b of document.querySelectorAll('[data-f]')) b.addEventListener('click', () => setEntry(FSET[b.dataset.f]));
+for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => setEntry(MODE[b.dataset.mode]));
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const splitF = (v) => String(v || '').split(/\s*[／\n]\s*/).map((x) => x.trim()).filter(Boolean);
+const LONGF = /メンバー|全員|1行に|ひとこと|備考|メモ|自己紹介|意気込み|コメント|共有|伝えたい|要望/;
+function formBox(title, list) {
+  return '<div class="pv"><b>' + esc(title) + '</b>' + list.map((x) => '<div class="pvf"><span>' + esc(x.slice(0, 45)) + '</span><i>' +
+    (/[（(]任意[)）]/.test(x) ? '任意' : '必須') + (LONGF.test(x) ? '・複数行' : '') + '</i></div>').join('') + '</div>';
+}
+function entryPreview() {
+  const f = form.elements, box = document.getElementById('entryPreview'), unit = f['申込単位'].value.trim();
+  const ff = splitF(f['入力項目'].value), mf = splitF(f['メンバー項目'].value);
+  if (!unit) { box.innerHTML = '<p class="hint">申込不要：Discordにエントリーボタンは付きません。</p>'; return; }
+  const nums = (unit.normalize('NFKC').match(/\d+/g) || []).map(Number), min = nums[0] || 1, max = nums.reduce((a, b) => a + b, 0) || 10;
+  const team = /チーム|部隊|ペア|組/.test(unit), roster = mf.length > 0;
+  const evRole = f['参加者ロール'].value.trim(), pat = f['チームロール'].value.trim();
+  const tr = (name) => pat.replace(/\{番号\}/g, '1').replace(/\{チーム名\}/g, name);
+  const trEmpty = pat.replace(/\{番号\}/g, '1').replace(/\s*[|｜\-・:：／]?\s*\{チーム名\}\s*/g, '').trim();
+  let html = '<p class="hint" style="margin:4px 0">▼ Discordではこう見えます</p><div class="pvrow">';
+  html += formBox(roster ? '① リーダーの入力画面（チーム登録）' : team ? '代表者の入力画面' : '申し込む人の入力画面', ff.length ? ff : ['（項目なし：標準の項目になります）']);
+  if (roster) html += formBox('② メンバーが各自入れる画面', mf);
+  html += '</div><p class="hint">' + [
+    roster ? 'リーダーがメンバーを' + max + '人までまとめて選び、' + min + '人そろって全員が入力したら登録完了' + (max > min ? '（' + (min + 1) + '人目からは補欠）' : '') : team ? '代表者が1回申し込めばOK' : 'ひとりずつ申し込み',
+    'Discord名・アイコンは自動で受け取ります',
+    evRole || (roster && pat) ? '付くロール：' + [evRole && '「' + evRole + '」', roster && pat && ('「' + trEmpty + '」（チーム名なし）／「' + tr('チーム名') + '」')].filter(Boolean).join('＋') : ''
+  ].filter(Boolean).map(esc).join('<br>') + '</p>';
+  const errs = [checkEntryFields(f['入力項目'].value), checkEntryFields(f['メンバー項目'].value)].filter(Boolean);
+  if (errs.length) html += '<p class="hint" style="color:#e66">⚠ ' + esc(errs.join(' ／ ')) + '</p>';
+  box.innerHTML = html;
+}
+for (const n of ['申込単位', '入力項目', 'メンバー項目', '参加者ロール', 'チームロール']) form.elements[n].addEventListener('input', entryPreview);
 function checkEntryFields(v) {
   const list = String(v || '').split(/\s*[／\n]\s*/).filter(Boolean);
   if (list.length > 5) return `入力してもらう項目は5つまでです（いま${list.length}つ）`;
