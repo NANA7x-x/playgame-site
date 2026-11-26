@@ -4,6 +4,7 @@
   "game_title": "VALORANT",
   "title": "LEAGUE 01",
   "sub": "8 TEAMS ROUND ROBIN",
+  "sub_jp": "8チーム総当たりリーグ",
   "stage": "STAGE 01",
   "pages": [
     {"tag": "FORMAT", "big": "8チーム総当たり", "small": "全チームと1回ずつ戦う・全28試合", "graphic": "roundrobin", "teams": 8},

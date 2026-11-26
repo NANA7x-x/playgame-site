@@ -185,7 +185,18 @@ def _sparkle(d, x, y, r, col, a):
     d.rectangle([x - s // 2, y - s * 3, x + s // 2, y + s * 3], fill=c)
     d.rectangle([x - s, y - s, x + s, y + s], fill=rgba((255, 255, 255), a))
 
-def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False):
+SPRITES = [
+    ('heart', [".XX.XX.", "XoXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."]),
+    ('star', ["...X...", "...X...", "XXXXXXX", ".XXXXX.", "..XXX..", ".XX.XX.", "X.....X"]),
+    ('pad', [".XXXXXXXX.", "XX.XXXXoXX", "X...XXoXoX", "XX.XXXXoXX", "XXXX..XXXX", ".XX....XX."]),
+    ('coin', ["..XXX..", ".XoXXX.", "XoXXXXX", "XoXXXXX", "XXXXXXX", ".XXXXX.", "..XXX.."]),
+    ('play', ["X.....", "XXX...", "XXXXX.", "XXXXXX", "XXXXX.", "XXX...", "X....."]),
+    ('heart2', [".XX.XX.", "XoXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."]),
+    ('bolt', ["...XXX", "..XXX.", ".XXXX.", "XXXXXX", "..XXX.", ".XXX..", ".XX...", "XX...."]),
+    ('coin2', ["..XXX..", ".XoXXX.", "XoXXXXX", "XoXXXXX", "XXXXXXX", ".XXXXX.", "..XXX.."]),
+]
+
+def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False, items=True):
     """中心に置く回るリング一式（RGBA, 正方形）。spin で回転の速さ、grow で大きさ（0→1）。mono=True で色を抑えた紫だけの版。"""
     if mono: PINK_, VIOLET_, CYAN_, MINT_ = (150, 120, 255), (98, 78, 190), (120, 110, 210), (140, 125, 230)
     else: PINK_, VIOLET_, CYAN_, MINT_ = PINK, VIOLET, CYAN, MINT
@@ -222,23 +233,22 @@ def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False):
         ang = math.radians(rot * .8 + k * 10); rr = R * .72 * g * SS
         x, y = c + rr * math.cos(ang), c + rr * math.sin(ang); s = 5 * SS
         d.rectangle([x - s, y - s, x + s, y + s], fill=rgba(GRAD_[k % 4], .85 * alpha))
-    # 斜めの軌道（3D っぽく回る）＋きらきら
-    for k, (tilt, sq, rr, sp, col) in enumerate([(20, .32, 1.06, 1.0, CYAN_), (-35, .28, .98, -1.3, PINK_), (70, .22, 1.12, .8, MINT_)]):
-        pts = []
-        for u in range(0, 361, 4):
-            a = math.radians(u); x = math.cos(a) * R * rr * g; y = math.sin(a) * R * rr * g * sq
-            ct, st = math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
-            pts.append((c + (x * ct - y * st) * SS, c + (x * st + y * ct) * SS))
-        d.line(pts, fill=rgba(col, .35 * alpha), width=2 * SS)
-        # 軌道の上を走る光（尾を引く）
-        for j in range(14):
-            a = math.radians(t * 120 * sp + k * 120 - j * 4 * (1 if sp > 0 else -1))
-            x = math.cos(a) * R * rr * g; y = math.sin(a) * R * rr * g * sq
-            ct, st = math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
-            px, py = c + (x * ct - y * st) * SS, c + (x * st + y * ct) * SS
-            fade = (1 - j / 14) * alpha
-            if j == 0: _sparkle(d, px, py, 4 * SS, col, fade)
-            else: s = (6 - j * .35) * SS; d.ellipse([px - s, py - s, px + s, py + s], fill=rgba(col, .55 * fade))
+    # ゲームのアイテム（ハート・星・コイン・コントローラー・▶）がリングの上をぐるぐる回る
+    if items:
+        n = len(SPRITES)
+        for k, (name, grid) in enumerate(SPRITES):
+            ang = math.radians(rot * .45 + k * 360 / n)
+            rr = R * 1.02 * g * SS
+            bob = math.sin(t * 3 + k) * 6 * SS
+            x, y = c + rr * math.cos(ang), c + rr * math.sin(ang) + bob
+            ps = 7 * SS; hh, ww = len(grid), len(grid[0])
+            x0, y0 = x - ww * ps / 2, y - hh * ps / 2
+            col = (GRAD_[k % 4])
+            for gy, row in enumerate(grid):
+                for gx, ch in enumerate(row):
+                    if ch == '.': continue
+                    cc = INK if ch == 'o' else col
+                    d.rectangle([x0 + gx * ps, y0 + gy * ps, x0 + (gx + 1) * ps - 1, y0 + (gy + 1) * ps - 1], fill=rgba(cc, .95 * alpha))
     out = lay.resize((size, size), Image.LANCZOS)
     # 光のにじみ
     glow = out.filter(ImageFilter.GaussianBlur(10))
@@ -269,3 +279,40 @@ def stars(img, t, a, seed=3, n=40):
         if b < .4: continue
         col = GRAD[k % 4]; s = 3 if b < .8 else 4
         d.rectangle([x - s, y - 1, x + s, y + 1], fill=rgba(col, a * b)); d.rectangle([x - 1, y - s, x + 1, y + s], fill=rgba(col, a * b))
+
+
+# ---------- 読みやすい文字（なめらかな太ゴシック） ----------
+BLACK = '/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc'
+BOLD = '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
+_ff = {}
+def jfont(px, weight='black'):
+    k = (px, weight)
+    if k not in _ff: _ff[k] = ImageFont.truetype(BLACK if weight == 'black' else BOLD, px, index=0)
+    return _ff[k]
+
+_jc = {}
+def jp_text(txt, px, fill=INK, weight='black', shadow=0, shadow_col=SHADOW, stroke=0):
+    """なめらかな文字。shadow でずらした影（PGっぽい段差）、stroke で暗いフチ。"""
+    key = (txt, px, fill, weight, shadow, shadow_col, stroke)
+    if key in _jc: return _jc[key]
+    f = jfont(px, weight)
+    l, tp, r, b = f.getbbox(txt, stroke_width=stroke)
+    pad = stroke + 4
+    im = Image.new('RGBA', (r - l + pad * 2 + shadow, b - tp + pad * 2 + shadow), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    o = (pad - l, pad - tp)
+    if shadow: d.text((o[0] + shadow, o[1] + shadow), txt, font=f, fill=rgba(shadow_col, 1), stroke_width=stroke, stroke_fill=rgba(shadow_col, 1))
+    d.text(o, txt, font=f, fill=rgba(fill, 1), stroke_width=stroke, stroke_fill=rgba(BG, 1))
+    _jc[key] = im
+    return im
+
+_cc = {}
+def jp_char(ch, px, fill=INK, weight='black', shadow=0, shadow_col=SHADOW):
+    """1文字を同じ高さの箱に描く（ー・、などの位置がずれない）。"""
+    key = (ch, px, fill, weight, shadow, shadow_col)
+    if key in _cc: return _cc[key]
+    f = jfont(px, weight); asc, desc = f.getmetrics(); pad = 4
+    im = Image.new('RGBA', (int(f.getlength(ch)) + pad * 2 + shadow, asc + desc + pad * 2 + shadow), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    if shadow: d.text((pad + shadow, pad + shadow), ch, font=f, fill=rgba(shadow_col, 1))
+    d.text((pad, pad), ch, font=f, fill=rgba(fill, 1))
+    _cc[key] = im
+    return im
