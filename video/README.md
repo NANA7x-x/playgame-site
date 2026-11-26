@@ -18,7 +18,6 @@ python3 make.py frames body events/league01.json 1.3 5.6   # 確認用の静止�
 | id | league01 | 出力ファイル名 |
 | prefix / game_title / title | PGP / VALORANT / LEAGUE 01 | タイトルの3段 |
 | sub | 8 TEAMS ROUND ROBIN | タイトル下の英字 |
-| teams | 8 | 書くと総当たりの図。書かないと `games`（ゲーム名の配列）が輪の上を回る |
-| info | [["DATE ","…"],["PRIZE","…"],["ENTRY","…"]] | メッセージ窓の3行 |
+| pages | [{"tag":"DATE","big":"1/23（土）","small":"19:00〜"}, …] | 1ページに1つずつ大きく出す情報。graphic:"roundrobin" と teams で総当たりの図 |
 | cta / cta_sub / how | ENTRY OPEN / ひとりでも参加OK！ / Discord… | 最後の画面 |
 | stage | STAGE 01 | 右上の表示 |

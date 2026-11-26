@@ -4,15 +4,14 @@
   "game_title": "VALORANT",
   "title": "LEAGUE 01",
   "sub": "8 TEAMS ROUND ROBIN",
-  "teams": 8,
   "stage": "STAGE 01",
-  "info": [
-    ["DATE ", "1/23（土）・1/24（日） 19:00〜"],
-    ["PRIZE", "優勝 ¥2,500×5 ／ 準優勝 ¥1,500×5"],
-    ["ENTRY", "11/26 〜 12/10 まで"]
+  "pages": [
+    {"tag": "FORMAT", "big": "8チーム総当たり", "small": "全チームと1回ずつ戦う・全28試合", "graphic": "roundrobin", "teams": 8},
+    {"tag": "DATE", "big": "1/23（土）・1/24（日）", "small": "2日間・どちらも19:00スタート"},
+    {"tag": "PRIZE", "big": "優勝 ¥2,500×5人", "small": "準優勝 ¥1,500×5人"},
+    {"tag": "ENTRY", "big": "11/26 〜 12/10", "small": "ひとりでも参加OK！"}
   ],
   "cta": "ENTRY OPEN",
-  "cta_sub": "ひとりでも参加OK！",
-  "how": "Discord「イベント情報」のエントリーボタンから",
-  "duration": 11.0
+  "cta_sub": "エントリー受付中！",
+  "how": "Discord「イベント情報」のエントリーボタンから"
 }
