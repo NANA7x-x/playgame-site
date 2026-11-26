@@ -21,3 +21,11 @@ python3 make.py frames body events/league01.json 1.3 5.6   # 確認用の静止�
 | pages | [{"tag":"DATE","big":"1/23（土）","small":"19:00〜"}, …] | 1ページに1つずつ大きく出す情報。graphic:"roundrobin" と teams で総当たりの図 |
 | cta / cta_sub / how | ENTRY OPEN / ひとりでも参加OK！ / Discord… | 最後の画面 |
 | stage | STAGE 01 | 右上の表示 |
+
+## この形で決定（2026-11-27）
+
+- OP・ED は全イベント共通（`make.py op` / `make.py ed`）。本編だけイベントごとに events/*.json を書く
+- 本編：タイトル → 情報を1ページに1つずつ大きく（pages）→ ENTRY OPEN の締め
+- 見た目：黒背景・白文字・差し色はピンク1色（PG_ACCENT で変更可）、カラーは PG ロゴだけ
+- 演出：グリッドの床・スキャンライン・細線のHUD、斜めの帯のワイプ＋グリッチでページ切り替え、文字は1文字ずつせり上がる、ゲームアイテムが回るリングがずっとループ
+- 上下の流れる文字（marquee）は使わない
