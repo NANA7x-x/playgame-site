@@ -34,7 +34,7 @@ def op_frame(t):
     img.alpha_composite(scaled(lay, s), (int(lx), int(ly)))
     # 揃った瞬間：フラッシュと衝撃波
     if 1.85 < t < 2.1: img.alpha_composite(Image.new('RGBA', (W, H), (255, 255, 255, int(150 * (1 - prog(t, 1.85, 2.1))))))
-    shockwave(img, cx, cy, prog(t, 1.85, 2.7), CYAN); shockwave(img, cx, cy, prog(t, 1.95, 2.9), PINK)
+    shockwave(img, cx, cy, prog(t, 1.85, 2.7), INK); shockwave(img, cx, cy, prog(t, 1.95, 2.9), ACCENT)
     # PLAY GAME / プレイゲーム / PRESENTS
     a = prog(t, 2.2, 2.6) * (1 - prog(t, 3.7, 4.0))
     if a > 0:
@@ -63,13 +63,13 @@ def ed_frame(t):
         lay = scaled(LOGO_FULL, .52 * back(p))
         paste_center(img, lay, cx, cy)
     if .55 < t < .75: img.alpha_composite(Image.new('RGBA', (W, H), (255, 255, 255, int(90 * (1 - prog(t, .55, .75))))))
-    shockwave(img, cx, cy, prog(t, .55, 1.3), MINT)
+    shockwave(img, cx, cy, prog(t, .55, 1.3), INK)
     # メッセージ
     a = prog(t, 1.0, 1.4)
     if a > 0:
-        msg = pixel_text('SEE YOU IN PLAY GAME!', 16, 5, grad=True, outline=True)
+        msg = pixel_text('SEE YOU IN PLAY GAME!', 16, 5, fill=INK, shadow=False)
         paste_center(img, with_alpha(msg, a), cx, 740)
-    lines = [('HP', 'nana7x-x.github.io/playgame-site', CYAN), ('DISCORD', '「イベント情報」チャンネルをチェック', PINK), ('X', '@7x_x7x_x7', MINT)]
+    lines = [('HP', 'nana7x-x.github.io/playgame-site', ACCENT), ('DISCORD', '「イベント情報」チャンネルをチェック', ACCENT), ('X', '@7x_x7x_x7', ACCENT)]
     for k, (tag, body, col) in enumerate(lines):
         q = prog(t, 1.6 + k * .25, 2.0 + k * .25)
         if q <= 0: continue
@@ -89,8 +89,8 @@ def ed_frame(t):
 # タイトル → 情報を1ページに1つずつ大きく → 締め。
 # ページの切り替えは斜めの帯がサッと横切るワイプ。文字は1文字ずつ下からせり上がる。
 # 右側のリング（ゲームのアイテムが回る）はずっとループで動き続ける。
-SOFT = (150, 135, 215)
-ACC = CYAN
+SOFT = (120, 120, 132)
+ACC = ACCENT
 T_TITLE, T_PAGE, T_FIN = 4.2, 4.6, 4.6     # タイトル・1ページ・締めの長さ（秒）
 WIPE = .8                                  # 切り替えの帯が横切る時間
 
@@ -128,7 +128,7 @@ def wipe(img, p):
     """斜めの帯が左から右へ横切る（p:0→1、0.5で画面がいちばん隠れる）。"""
     if p <= 0 or p >= 1: return
     lay = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); sk = 360
-    for k, (col, dl) in enumerate([(SOFT, 0), (VIOLET, .06), (PANEL, .12)]):
+    for k, (col, dl) in enumerate([(ACC, 0), (INK, .05), (PANEL, .12)]):
         pp = clamp((p - dl) / (1 - .12))
         lead = -sk + (W + sk * 2) * ease_io(clamp(pp * 2))
         trail = -sk + (W + sk * 2) * ease_io(clamp(pp * 2 - 1))
@@ -169,22 +169,22 @@ def side_shade(img, a):
 def title_page(lay, t, ev):
     x0 = 150
     a = prog(t, .2, .5)
-    if a > 0: lay.alpha_composite(with_alpha(pixel_text(ev['prefix'], 16, 5, fill=MUTED, shadow=False), a), (x0 + 6, 270 - int(20 * (1 - ease(a)))))
+    if a > 0: lay.alpha_composite(with_alpha(pixel_text(ev['prefix'], 16, 5, fill=MUTED, shadow=False), a), (x0 + 6, 290 - int(20 * (1 - ease(a)))))
     val = pixel_text(ev['game_title'], 16, 8, fill=INK, shadow=False)
     p = prog(t, .35, .8)
     if p > 0: lay.alpha_composite(val.crop((0, 0, max(1, int(val.width * int(p * 8) / 8)), val.height)), (x0, 350))
-    tl = pixel_text(ev['title'], 20, ev.get('title_scale', 13), grad=True, outline=True)
+    tl = pixel_text(ev['title'], 20, ev.get('title_scale', 13), fill=INK, shadow=False)
     p = prog(t, .7, 1.4)
     if p > 0:
         jit = 1 - prog(t, .7, 1.3); rnd = random.Random(int(t * FPS))
         if jit > 0:
-            for col, dx in ((PINK, 14), (CYAN, -14)):
+            for col, dx in ((ACC, 14), (MUTED, -14)):
                 gh = Image.new('RGBA', tl.size, rgba(col, 1)); gh.putalpha(ImageChops.multiply(tl.getchannel('A'), Image.new('L', tl.size, int(110 * jit))))
                 lay.alpha_composite(gh, (x0 + int(dx * jit) + rnd.randint(-4, 4), 500 + rnd.randint(-3, 3)))
         lay.alpha_composite(tl.crop((0, 0, max(1, int(tl.width * int(p * 9) / 9)), tl.height)), (x0, 500))
     a = prog(t, 1.4, 1.9)
     if a > 0:
-        d = ImageDraw.Draw(lay); d.rectangle([x0 + 6, 790, x0 + 6 + 900 * ease(a), 796], fill=rgba(SOFT, 1))
+        d = ImageDraw.Draw(lay); d.rectangle([x0 + 6, 790, x0 + 6 + 900 * ease(a), 796], fill=rgba(ACC, 1))
         sub = jp_text(ev.get('sub_jp', ev['sub']), 54, weight='bold', shadow=4)
         lay.alpha_composite(with_alpha(sub, a), (x0 + 4 + int(40 * (1 - ease(a))), 822))
 
@@ -245,7 +245,7 @@ def body_frame(t, ev):
         F = lt
         paste_center(img, rings(t, R=430, grow=prog(F, 0, .9), alpha=.45, spin=.8, mono=True), W // 2, 420)
         img.alpha_composite(Image.new('RGBA', (W, H), rgba(BG, .35)))
-        big = pixel_text(ev['cta'], 20, 12, grad=True, outline=True)
+        big = pixel_text(ev['cta'], 20, 12, fill=INK, shadow=False)
         q = prog(F, .4, .9); y = 290; x = (W - big.width) // 2
         rows = int(big.height * q) // 12 * 12
         if rows > 0: img.alpha_composite(big.crop((0, big.height - rows, big.width, big.height)), (x, y + big.height - rows))

@@ -3,17 +3,19 @@ import math, random, os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 
 W, H, FPS = 1920, 1080, 30
-BG = (11, 8, 20)
-PANEL = (23, 17, 38)
-LINE = (58, 45, 87)
-INK = (243, 239, 255)
-MUTED = (185, 173, 217)
+BG = (10, 10, 13)
+PANEL = (26, 26, 32)
+LINE = (56, 56, 66)
+INK = (246, 246, 248)
+MUTED = (150, 150, 162)
 PINK = (255, 63, 208)
 CYAN = (47, 216, 255)
 MINT = (79, 255, 192)
 VIOLET = (122, 92, 255)
-SHADOW = (162, 75, 234)
+SHADOW = (36, 36, 44)
 GRAD = [PINK, VIOLET, CYAN, MINT]
+# ロゴ以外で使う色はこの1色だけ（PG_ACCENT=pink / cyan で切り替え）
+ACCENT = {'pink': PINK, 'cyan': CYAN, 'mint': MINT, 'violet': VIOLET}[os.environ.get('PG_ACCENT', 'pink')]
 HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, 'assets') if os.path.isdir(os.path.join(HERE, 'assets')) else os.path.join(HERE, '..', 'img')
 
@@ -105,7 +107,7 @@ def _dot_grid():
     for x in range(0, W, 24):
         for y in range(0, H, 24): d.rectangle([x, y, x + 1, y + 1], fill=rgba(LINE, .9))
     glow = Image.new('RGBA', (W, H), (0, 0, 0, 0)); gd = ImageDraw.Draw(glow)
-    gd.ellipse([W * .45, -300, W * 1.2, H * .9], fill=rgba(VIOLET, .22)); gd.ellipse([-300, H * .45, W * .5, H + 300], fill=rgba(PINK, .12))
+    gd.ellipse([W * .45, -300, W * 1.2, H * .9], fill=(255, 255, 255, 10))
     im.alpha_composite(glow.filter(ImageFilter.GaussianBlur(120)))
     return im
 GRID = _dot_grid()
@@ -118,7 +120,7 @@ def _scan():
     im.alpha_composite(dark)
     return im
 SCAN = _scan()
-MQ = pixel_text('PLAY GAME + プレイゲーム + ', 14, 2, fill=(165, 150, 255), shadow=False)
+MQ = pixel_text('PLAY GAME + プレイゲーム + ', 14, 2, fill=(110, 110, 122), shadow=False)
 
 def background(t):
     img = Image.new('RGBA', (W, H), BG + (255,)); img.alpha_composite(GRID); return img
@@ -129,7 +131,7 @@ def marquee(img, t, a):
     for y in (0, H - band):
         d.rectangle([0, y, W, y + band], fill=rgba(PANEL, a))
         yy = y + band - 1 if y == 0 else y
-        d.line([(0, yy), (W, yy)], fill=rgba(VIOLET, a), width=2)
+        d.line([(0, yy), (W, yy)], fill=rgba(LINE, a), width=2)
     off = int(t * 120) % MQ.width
     for y, sgn in ((0, 1), (H - band, -1)):
         x = -off if sgn > 0 else off - MQ.width
@@ -198,8 +200,8 @@ SPRITES = [
 
 def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False, items=True):
     """中心に置く回るリング一式（RGBA, 正方形）。spin で回転の速さ、grow で大きさ（0→1）。mono=True で色を抑えた紫だけの版。"""
-    if mono: PINK_, VIOLET_, CYAN_, MINT_ = (150, 120, 255), (98, 78, 190), (120, 110, 210), (140, 125, 230)
-    else: PINK_, VIOLET_, CYAN_, MINT_ = PINK, VIOLET, CYAN, MINT
+    # 色は抑える：灰色と白、アクセント1色だけ
+    PINK_, VIOLET_, CYAN_, MINT_ = ACCENT, (95, 95, 108), (150, 150, 162), (210, 210, 218)
     GRAD_ = [PINK_, VIOLET_, CYAN_, MINT_]
     size = int(R * 2.6); S = size * SS
     lay = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
@@ -243,7 +245,7 @@ def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False, items
             x, y = c + rr * math.cos(ang), c + rr * math.sin(ang) + bob
             ps = 7 * SS; hh, ww = len(grid), len(grid[0])
             x0, y0 = x - ww * ps / 2, y - hh * ps / 2
-            col = (GRAD_[k % 4])
+            col = (200, 200, 210)
             for gy, row in enumerate(grid):
                 for gx, ch in enumerate(row):
                     if ch == '.': continue
@@ -256,10 +258,10 @@ def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False, items
     res.alpha_composite(glow); res.alpha_composite(glow); res.alpha_composite(out)
     return res
 
-def center_glow(img, cx, cy, r, a, col=VIOLET):
+def center_glow(img, cx, cy, r, a, col=(150, 150, 170)):
     if a <= 0: return
     g = Image.new('RGBA', (int(r * 4), int(r * 4)), (0, 0, 0, 0)); gd = ImageDraw.Draw(g)
-    gd.ellipse([r, r, r * 3, r * 3], fill=rgba(col, .55 * a))
+    gd.ellipse([r, r, r * 3, r * 3], fill=rgba(col, .25 * a))
     paste_center(img, g.filter(ImageFilter.GaussianBlur(r * .5)), cx, cy)
 
 def shockwave(img, cx, cy, p, col=(255, 255, 255)):
@@ -277,7 +279,7 @@ def stars(img, t, a, seed=3, n=40):
         x, y = rnd.randrange(80, W - 80), rnd.randrange(80, H - 80); ph = rnd.random() * 6.28; sp = 1.5 + rnd.random() * 2
         b = (math.sin(t * sp + ph) + 1) / 2
         if b < .4: continue
-        col = GRAD[k % 4]; s = 3 if b < .8 else 4
+        col = (170, 170, 180); s = 3 if b < .8 else 4
         d.rectangle([x - s, y - 1, x + s, y + 1], fill=rgba(col, a * b)); d.rectangle([x - 1, y - s, x + 1, y + s], fill=rgba(col, a * b))
 
 
