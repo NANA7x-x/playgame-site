@@ -185,8 +185,11 @@ def _sparkle(d, x, y, r, col, a):
     d.rectangle([x - s // 2, y - s * 3, x + s // 2, y + s * 3], fill=c)
     d.rectangle([x - s, y - s, x + s, y + s], fill=rgba((255, 255, 255), a))
 
-def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True):
-    """中心に置く回るリング一式（RGBA, 正方形）。spin で回転の速さ、grow で大きさ（0→1）。"""
+def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True, mono=False):
+    """中心に置く回るリング一式（RGBA, 正方形）。spin で回転の速さ、grow で大きさ（0→1）。mono=True で色を抑えた紫だけの版。"""
+    if mono: PINK_, VIOLET_, CYAN_, MINT_ = (150, 120, 255), (98, 78, 190), (120, 110, 210), (140, 125, 230)
+    else: PINK_, VIOLET_, CYAN_, MINT_ = PINK, VIOLET, CYAN, MINT
+    GRAD_ = [PINK_, VIOLET_, CYAN_, MINT_]
     size = int(R * 2.6); S = size * SS
     lay = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
     c = S / 2
@@ -202,25 +205,25 @@ def rings(t, R=360, grow=1.0, alpha=1.0, spin=1.0, heart=True):
     for k in range(96):
         ang = math.radians(rot * .25 + k * 3.75); r1 = R * 1.18 * g * SS; r2 = r1 - (16 if k % 8 == 0 else 7) * SS
         d.line([(c + r1 * math.cos(ang), c + r1 * math.sin(ang)), (c + r2 * math.cos(ang), c + r2 * math.sin(ang))],
-               fill=rgba(VIOLET if k % 8 else PINK, (.9 if k % 8 == 0 else .5) * alpha), width=2 * SS if k % 8 == 0 else SS)
+               fill=rgba(VIOLET_ if k % 8 else PINK_, (.9 if k % 8 == 0 else .5) * alpha), width=2 * SS if k % 8 == 0 else SS)
     # 点線の円（逆回り）
     for k in range(48):
         a0 = -rot * .6 + k * 7.5
-        arc(R * 1.04, a0, a0 + 3.2, CYAN, .8, 3)
+        arc(R * 1.04, a0, a0 + 3.2, CYAN_, .8, 3)
     # 太い弧（速い）
-    for s0, ln, col, w in [(0, 80, PINK, 10), (120, 35, MINT, 10), (200, 95, VIOLET, 6), (318, 22, CYAN, 10)]:
+    for s0, ln, col, w in [(0, 80, PINK_, 10), (120, 35, MINT_, 10), (200, 95, VIOLET_, 6), (318, 22, CYAN_, 10)]:
         arc(R * .9, rot * 1.6 + s0, rot * 1.6 + s0 + ln, col, .95, w)
     # 細い弧（逆回り）
-    for s0, ln, col in [(30, 140, CYAN), (210, 60, PINK)]:
+    for s0, ln, col in [(30, 140, CYAN_), (210, 60, PINK_)]:
         arc(R * .78, -rot * 1.1 + s0, -rot * 1.1 + s0 + ln, col, .7, 2)
-    circ(R * .66, VIOLET, .45, 1)
+    circ(R * .66, VIOLET_, .45, 1)
     # ドットの円（ピクセルの四角が並んで回る）
     for k in range(36):
         ang = math.radians(rot * .8 + k * 10); rr = R * .72 * g * SS
         x, y = c + rr * math.cos(ang), c + rr * math.sin(ang); s = 5 * SS
-        d.rectangle([x - s, y - s, x + s, y + s], fill=rgba(GRAD[k % 4], .85 * alpha))
+        d.rectangle([x - s, y - s, x + s, y + s], fill=rgba(GRAD_[k % 4], .85 * alpha))
     # 斜めの軌道（3D っぽく回る）＋きらきら
-    for k, (tilt, sq, rr, sp, col) in enumerate([(20, .32, 1.06, 1.0, CYAN), (-35, .28, .98, -1.3, PINK), (70, .22, 1.12, .8, MINT)]):
+    for k, (tilt, sq, rr, sp, col) in enumerate([(20, .32, 1.06, 1.0, CYAN_), (-35, .28, .98, -1.3, PINK_), (70, .22, 1.12, .8, MINT_)]):
         pts = []
         for u in range(0, 361, 4):
             a = math.radians(u); x = math.cos(a) * R * rr * g; y = math.sin(a) * R * rr * g * sq

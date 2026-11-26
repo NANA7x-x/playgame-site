@@ -86,108 +86,106 @@ def ed_frame(t):
     return crt_off(img, prog(t, 4.6, 5.5))
 
 # ======================= 本編（イベントごと） =======================
+# 色は抑えめ：タイトルだけPGのグラデーション、ほかは白と紫系。情報は大きく・ゆっくり。
+SOFT = (150, 135, 215)      # 控えめな紫（線・枠）
+ACC = CYAN                  # 情報の見出しだけに使う色
+F_INFO = 7.4                # 締めの画面が始まる時間
 def body_frame(t, ev):
     img = background(t + 40)
-    stars(img, t + OP_DUR, 1)
+    stars(img, t + OP_DUR, .45)
     x0 = 110
-    # 左上のロゴ（OPの最後と同じ位置）
     img.alpha_composite(scaled(LOGO_FULL, CORNER_S), CORNER_XY)
-    # 右側：回るリング＋チーム（またはゲーム名）
-    TC = (1480, 440)
-    center_glow(img, *TC, 260, prog(t, 0, .6))
-    paste_center(img, rings(t + 5, R=250, grow=prog(t, .0, .9), spin=.9), *TC)
-    n = ev.get('teams')
     d = ImageDraw.Draw(img)
+    # 右側：控えめに回るリング＋チーム（またはゲーム名）
+    TC = (1480, 430)
+    fade_r = 1 - .6 * prog(t, 3.2, 3.6)          # 情報が出たらさらに控えめに
+    paste_center(img, rings(t + 5, R=250, grow=prog(t, 0, .9), alpha=.55 * fade_r, spin=.6, mono=True), *TC)
+    n = ev.get('teams')
     if n:
         R = 200
         pts = [(TC[0] + R * math.cos(math.radians(-90 + 360 / n * k)), TC[1] + R * math.sin(math.radians(-90 + 360 / n * k))) for k in range(n)]
         pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
-        m = int(len(pairs) * prog(t, 1.6, 3.0))
-        for k, (i, j) in enumerate(pairs[:m]): d.line([pts[i], pts[j]], fill=rgba(GRAD[k % 4], .5), width=3)
+        m = int(len(pairs) * prog(t, 1.6, 2.8))
+        for i, j in pairs[:m]: d.line([pts[i], pts[j]], fill=rgba(SOFT, .30 * fade_r + .1), width=2)
         if m == len(pairs):
-            pl = prog(t, 3.0, 3.3); r = 52 + 6 * math.sin(t * 6)
-            d.ellipse([TC[0] - r, TC[1] - r, TC[0] + r, TC[1] + r], fill=rgba(BG, pl), outline=rgba(MINT, pl), width=4)
-            paste_center(img, with_alpha(pixel_text(str(len(pairs)), 14, 4, fill=MINT, shadow=False), pl), TC[0], TC[1] - 8)
+            pl = prog(t, 2.8, 3.1); r = 56
+            d.ellipse([TC[0] - r, TC[1] - r, TC[0] + r, TC[1] + r], fill=rgba(BG, pl), outline=rgba(SOFT, pl), width=3)
+            paste_center(img, with_alpha(pixel_text(str(len(pairs)), 14, 4, fill=INK, shadow=False), pl), TC[0], TC[1] - 8)
             paste_center(img, with_alpha(pixel_text('MATCHES', 12, 2, fill=MUTED, shadow=False), pl), TC[0], TC[1] + 26)
         for k, (x, y) in enumerate(pts):
             p = prog(t, .9 + k * .08, 1.1 + k * .08)
             if p <= 0: continue
-            s = max(8, 40 * back(p)); c = GRAD[k % 4]
-            d.rectangle([x - s, y - s, x + s, y + s], fill=rgba(PANEL, 1), outline=(255, 255, 255, 255), width=4)
-            d.rectangle([x - s + 6, y - s + 6, x + s - 6, y + s - 6], outline=rgba(c, 1), width=3)
-            if p >= 1: paste_center(img, pixel_text(f'T{k + 1}', 14, 3, fill=c, shadow=False), x, y)
+            s = max(8, 38 * back(p))
+            d.rectangle([x - s, y - s, x + s, y + s], fill=rgba(PANEL, 1), outline=rgba(SOFT, 1), width=3)
+            if p >= 1: paste_center(img, pixel_text(f'T{k + 1}', 14, 3, fill=INK, shadow=False), x, y)
     else:
-        # チーム数がないイベント：ゲーム名が輪の上を回る
         games = ev.get('games') or [ev.get('game', '')]
         for k, g in enumerate(games):
-            a = math.radians(t * 25 + 360 / len(games) * k); x = TC[0] + 230 * math.cos(a); y = TC[1] + 230 * .55 * math.sin(a)
-            lab = pixel_text(g, 12, 3, fill=GRAD[k % 4], shadow=True)
-            paste_center(img, with_alpha(lab, prog(t, .8 + k * .1, 1.2 + k * .1)), x, y)
-    # タイトル
+            a = math.radians(t * 20 + 360 / len(games) * k); x = TC[0] + 230 * math.cos(a); y = TC[1] + 230 * .55 * math.sin(a)
+            paste_center(img, with_alpha(pixel_text(g, 12, 3, fill=INK, shadow=False), prog(t, .8 + k * .1, 1.2 + k * .1)), x, y)
+    # タイトル（ここだけPGのグラデーション）
     a = prog(t, .15, .45)
-    if a > 0: img.alpha_composite(with_alpha(pixel_text(ev['prefix'], 16, 4, fill=CYAN, shadow=False), a), (x0 + 6, 290))
-    val = pixel_text(ev['game_title'], 16, 6, fill=INK)
+    if a > 0: img.alpha_composite(with_alpha(pixel_text(ev['prefix'], 16, 4, fill=MUTED, shadow=False), a), (x0 + 6, 290))
+    val = pixel_text(ev['game_title'], 16, 6, fill=INK, shadow=False)
     p = prog(t, .25, .7)
     if p > 0: img.alpha_composite(val.crop((0, 0, max(1, int(val.width * int(p * 8) / 8)), val.height)), (x0, 350))
     tl = pixel_text(ev['title'], 20, ev.get('title_scale', 11), grad=True, outline=True)
     p = prog(t, .6, 1.3)
     if p > 0:
-        jit = 1 - prog(t, .6, 1.4); rnd = random.Random(int(t * FPS))
+        jit = 1 - prog(t, .6, 1.2); rnd = random.Random(int(t * FPS))
         if jit > 0:
-            for col, dx in ((PINK, 14), (CYAN, -14)):
-                gh = Image.new('RGBA', tl.size, rgba(col, 1)); gh.putalpha(ImageChops.multiply(tl.getchannel('A'), Image.new('L', tl.size, int(140 * jit))))
-                img.alpha_composite(gh, (x0 + int(dx * jit) + rnd.randint(-6, 6), 470 + rnd.randint(-4, 4)))
+            for col, dx in ((PINK, 12), (CYAN, -12)):
+                gh = Image.new('RGBA', tl.size, rgba(col, 1)); gh.putalpha(ImageChops.multiply(tl.getchannel('A'), Image.new('L', tl.size, int(110 * jit))))
+                img.alpha_composite(gh, (x0 + int(dx * jit) + rnd.randint(-4, 4), 470 + rnd.randint(-3, 3)))
         img.alpha_composite(tl.crop((0, 0, max(1, int(tl.width * int(p * 9) / 9)), tl.height)), (x0, 470))
     a = prog(t, 1.2, 1.6)
     if a > 0:
-        for k in range(int(46 * a)): d.rectangle([x0 + 6 + k * 18, 700, x0 + 17 + k * 18, 711], fill=GRAD[(k // 3) % 4])
-        img.alpha_composite(with_alpha(pixel_text(ev['sub'], 16, 3, fill=MINT, shadow=False), a), (x0 + 6, 734))
-    # メッセージ窓
-    p = prog(t, 3.3, 3.6)
-    if p > 0:
-        X0, Y0, X1, Y1 = 130, 795, 1790, 985; h = int((Y1 - Y0) * ease(p)); yc = (Y0 + Y1) // 2
         d = ImageDraw.Draw(img)
-        d.rectangle([X0, yc - h // 2, X1, yc + h // 2], fill=rgba(PANEL, .96), outline=(255, 255, 255, 255), width=6)
-        d.rectangle([X0 + 10, yc - h // 2 + 10, X1 - 10, yc + h // 2 - 10], outline=rgba(VIOLET, 1), width=3)
+        d.rectangle([x0 + 6, 702, x0 + 6 + 820 * ease(a), 707], fill=rgba(SOFT, 1))
+        img.alpha_composite(with_alpha(pixel_text(ev['sub'], 16, 3, fill=MUTED, shadow=False), a), (x0 + 6, 730))
+    # 情報（大きく・1行ずつ・ゆっくり）
+    p = prog(t, 3.2, 3.5)
+    if p > 0:
+        X0, Y0, X1, Y1 = 130, 790, 1790, 1000; h = int((Y1 - Y0) * ease(p)); yc = (Y0 + Y1) // 2
+        d = ImageDraw.Draw(img)
+        d.rectangle([X0, yc - h // 2, X1, yc + h // 2], fill=rgba(PANEL, .97), outline=rgba(SOFT, 1), width=3)
         if p >= 1:
             for k, (tag, text) in enumerate(ev['info'][:3]):
-                st = 3.7 + k * .5; q = prog(t, st, st + .45)
+                st = 3.6 + k * 1.0; q = prog(t, st, st + .6)
                 if q <= 0: continue
-                img.alpha_composite(pixel_text('▶ ' + tag, 14, 3, fill=GRAD[(k + 2) % 4], shadow=False), (X0 + 40, Y0 + 28 + k * 50))
-                s = text[:int(len(text) * q)]
-                if s: img.alpha_composite(pixel_text(s, 14, 3, fill=INK, shadow=False), (X0 + 270, Y0 + 28 + k * 50))
-            if t > 5.3 and int(t * 4) % 2 == 0: d.polygon([(X1 - 60, Y1 - 46), (X1 - 36, Y1 - 46), (X1 - 48, Y1 - 30)], fill=INK)
-    # 締め：ENTRY OPEN など
-    p = prog(t, 6.0, 6.4)
+                y = Y0 + 22 + k * 62
+                img.alpha_composite(with_alpha(pixel_text(tag.strip(), 12, 3, fill=ACC, shadow=False), prog(t, st, st + .15)), (X0 + 44, y + 12))
+                sv = text[:int(len(text) * q)]
+                if sv: img.alpha_composite(pixel_text(sv, 14, 3, fill=INK, shadow=False), (X0 + 260, y + 4))
+    # 締め
+    F = F_INFO
+    p = prog(t, F, F + .4)
     if p > 0:
-        img.alpha_composite(Image.new('RGBA', (W, H), rgba(BG, .82 * ease(p))))
+        img.alpha_composite(Image.new('RGBA', (W, H), rgba(BG, .9 * ease(p))))
+        paste_center(img, rings(t, R=430, grow=prog(t, F, F + .8), alpha=.35, spin=.8, mono=True), W // 2, 400)
         big = pixel_text(ev['cta'], 20, 12, grad=True, outline=True)
-        paste_center(img, rings(t, R=420, grow=prog(t, 6.0, 6.8), alpha=.55, spin=1.4), W // 2, 380)
-        q = prog(t, 6.2, 6.7); y = 300; x = (W - big.width) // 2
+        q = prog(t, F + .2, F + .7); y = 300; x = (W - big.width) // 2
         rows = int(big.height * q) // 12 * 12
         if rows > 0: img.alpha_composite(big.crop((0, big.height - rows, big.width, big.height)), (x, y + big.height - rows))
         if ev.get('cta_sub'):
-            a = prog(t, 6.7, 7.0); sub = pixel_text(ev['cta_sub'], 20, 3, fill=MINT)
-            paste_center(img, with_alpha(sub, a), W // 2, y + big.height + 60)
-        if t > 7.0 and int((t - 7.0) * 2.5) % 2 == 0:
-            paste_center(img, pixel_text('▶ PRESS ENTRY', 16, 4, fill=INK), W // 2, y + big.height + 145)
-        a = prog(t, 7.2, 7.6)
+            paste_center(img, with_alpha(pixel_text(ev['cta_sub'], 20, 3, fill=INK, shadow=False), prog(t, F + .7, F + 1.0)), W // 2, y + big.height + 60)
+        if t > F + 1.0 and int((t - F - 1.0) * 2) % 2 == 0:
+            paste_center(img, pixel_text('▶ PRESS ENTRY', 16, 3, fill=MUTED, shadow=False), W // 2, y + big.height + 140)
+        a = prog(t, F + 1.2, F + 1.6)
         if a > 0 and ev.get('how'):
             cta = pixel_text(ev['how'], 14, 3, fill=INK, shadow=False); d = ImageDraw.Draw(img)
-            bx = (W - cta.width) // 2; by = 850
-            d.rectangle([bx - 36, by - 22, bx + cta.width + 36, by + cta.height + 22], fill=rgba(VIOLET, a), outline=rgba((255, 255, 255), a), width=4)
+            bx = (W - cta.width) // 2; by = 860
+            d.rectangle([bx - 36, by - 22, bx + cta.width + 36, by + cta.height + 22], fill=rgba(PANEL, a), outline=rgba(SOFT, a), width=3)
             img.alpha_composite(with_alpha(cta, a), (bx, by))
-    # 右上：ゲームのスコア風
-    s1 = pixel_text(ev.get('stage', 'STAGE 01'), 12, 3, fill=CYAN, shadow=False)
+    s1 = pixel_text(ev.get('stage', 'STAGE 01'), 12, 3, fill=MUTED, shadow=False)
     img.alpha_composite(with_alpha(s1, prog(t, .3, .6)), (W - 110 - s1.width, 90))
     marquee(img, t + OP_DUR, 1); corners(img, 1)
     img = finish(img, t)
-    # 最後は暗くしてEDへ
     e = prog(t, body_dur(ev) - .35, body_dur(ev))
     if e > 0: img = Image.blend(img, Image.new('RGBA', (W, H), BG + (255,)), e)
     return img
 
-def body_dur(ev): return ev.get('duration', 9.0)
+def body_dur(ev): return ev.get('duration', 11.0)
 
 # ======================= 書き出し =======================
 def render(fn, dur, out):
