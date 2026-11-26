@@ -122,8 +122,70 @@ def _scan():
 SCAN = _scan()
 MQ = pixel_text('PLAY GAME + プレイゲーム + ', 14, 2, fill=(110, 110, 122), shadow=False)
 
+HORIZON = int(H * .70)
+def _floor_v():
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im); vx = W / 2
+    for k in range(-24, 25):
+        d.line([(vx + k * 18, HORIZON), (vx + k * 260, H + 40)], fill=(255, 255, 255, 40), width=1)
+    m = Image.new('L', (1, H), 0)
+    for y in range(HORIZON, H): m.putpixel((0, y), int(255 * min(1, (y - HORIZON) / 180) ** 1.5))
+    im.putalpha(ImageChops.multiply(im.getchannel('A'), m.resize((W, H))))
+    return im
+FLOOR_V = _floor_v()
+
 def background(t):
-    img = Image.new('RGBA', (W, H), BG + (255,)); img.alpha_composite(GRID); return img
+    """黒の背景＋奥へ流れていくグリッドの床＋上下にゆっくり走るスキャンライン。"""
+    img = Image.new('RGBA', (W, H), BG + (255,)); img.alpha_composite(GRID); img.alpha_composite(FLOOR_V)
+    d = ImageDraw.Draw(img)
+    ph = (t * .6) % 1
+    for k in range(14):
+        z = (k + 1 - ph)          # 奥行き
+        y = HORIZON + 900 / (z * 3 + 1)
+        if HORIZON + 6 < y < H: d.line([(0, y), (W, y)], fill=(255, 255, 255, int(40 * min(1, (y - HORIZON) / 160) ** 1.5)), width=1)
+    hz = Image.new('RGBA', (W, 3), (0, 0, 0, 0)); hd = ImageDraw.Draw(hz)
+    for x in range(0, W, 4): hd.line([(x, 1), (x + 3, 1)], fill=rgba(ACCENT, .5 * (1 - abs(x - W / 2) / (W / 2)) ** 1.5))
+    img.alpha_composite(hz, (0, HORIZON - 1))
+    # スキャンライン
+    sy = int(((t * .25) % 1) * (H + 200)) - 100
+    band = Image.new('RGBA', (W, 120), (0, 0, 0, 0)); bd = ImageDraw.Draw(band)
+    for y in range(120): bd.line([(0, y), (W, y)], fill=(255, 255, 255, int(10 * (y / 120) ** 2)))
+    img.alpha_composite(band, (0, sy - 120)); d.line([(0, sy), (W, sy)], fill=(255, 255, 255, 40))
+    return img
+
+def mono_text(txt, px, fill=MUTED):
+    key = ('m', txt, px, fill)
+    if key in _cache: return _cache[key]
+    f = pfont(px); l, tp, r, b = f.getbbox(txt)
+    im = Image.new('RGBA', (r - l + 4, b - tp + 4), (0, 0, 0, 0)); ImageDraw.Draw(im).text((2 - l, 2 - tp), txt, font=f, fill=rgba(fill, 1))
+    _cache[key] = im; return im
+
+def hud(img, t, a, label='PG // EVENT SYSTEM'):
+    """細い線のHUD：四隅のかぎ、上下の目盛り、小さな文字。"""
+    if a <= 0: return
+    d = ImageDraw.Draw(img); m = 48; L = 36; c = rgba(MUTED, .8 * a)
+    for x, y, sx, sy in [(m, m, 1, 1), (W - m, m, -1, 1), (m, H - m, 1, -1), (W - m, H - m, -1, -1)]:
+        d.line([(x, y), (x + sx * L, y)], fill=c, width=2); d.line([(x, y), (x, y + sy * L)], fill=c, width=2)
+    for k in range(41):
+        x = W / 2 - 400 + k * 20; h = 10 if k % 5 == 0 else 5
+        d.line([(x, m), (x, m + h)], fill=rgba(MUTED, .45 * a)); d.line([(x, H - m), (x, H - m - h)], fill=rgba(MUTED, .45 * a))
+    d.line([(W / 2 - 400, m), (W / 2 + 400, m)], fill=rgba(LINE, a)); d.line([(W / 2 - 400, H - m), (W / 2 + 400, H - m)], fill=rgba(LINE, a))
+    tr = mono_text(label, 20, INK); img.alpha_composite(with_alpha(tr, a), (W - m - 20 - tr.width, m + 16))
+    sub = mono_text(f'SYS.{int(t * 997) % 10000:04d}  //  SIGNAL OK', 16); img.alpha_composite(with_alpha(sub, a * .8), (W - m - 20 - sub.width, m + 46))
+    sec = int(t); fr = int((t % 1) * 30)
+    if int(t * 2) % 2 == 0: d.rectangle([m + 20, H - m - 34, m + 32, H - m - 22], fill=rgba(ACCENT, a))
+    lv = mono_text(f'LIVE   00:{sec:02d}:{fr:02d}', 18, INK); img.alpha_composite(with_alpha(lv, a), (m + 44, H - m - 38))
+    br = mono_text('PLAY GAME  ©2026', 16); img.alpha_composite(with_alpha(br, a * .8), (W - m - 20 - br.width, H - m - 36))
+
+def glitch(img, k, seed):
+    """横にずれる帯とピンクのにじみ（k:強さ0→1）。"""
+    if k <= 0: return img
+    rnd = random.Random(seed); out = img.copy()
+    for _ in range(int(6 + 8 * k)):
+        y = rnd.randrange(0, H - 10); h = rnd.randrange(4, 40); dx = int(rnd.choice([-1, 1]) * rnd.randrange(10, 90) * k)
+        out.paste(img.crop((0, y, W, y + h)), (dx, y))
+    tint = Image.new('RGBA', (W, H), rgba(ACCENT, 1)); tint.putalpha(out.convert('L').point(lambda v: int(v * .35 * k)))
+    out.alpha_composite(tint, (int(12 * k), 0))
+    return out
 
 def marquee(img, t, a):
     if a <= 0: return

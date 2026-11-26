@@ -45,7 +45,7 @@ def op_frame(t):
         pr = pixel_text('PRESENTS', 12, 3, fill=MUTED, shadow=False)
         if t > 2.8 and int((t - 2.8) * 4) % 2 == 0 or t > 3.3:
             paste_center(img, with_alpha(pr, a), cx, y + en.height + kana.height + 56)
-    marquee(img, t, prog(t, .7, 1.1)); corners(img, prog(t, .7, 1.1))
+    hud(img, t, prog(t, .7, 1.1))
     img = finish(img, t)
     return crt_on(img, prog(t, 0, .55))
 
@@ -79,7 +79,7 @@ def ed_frame(t):
     if t > 2.6 and int((t - 2.6) * 2.5) % 2 == 0 and t < 4.6:
         ps = pixel_text('PRESS START', 16, 4, fill=INK)
         paste_center(img, ps, cx, 655)
-    marquee(img, t + 7, 1); corners(img, 1)
+    hud(img, t + OP_DUR + 40, 1)
     img = finish(img, t)
     s = prog(t, 0, .35)
     if s < 1: img = Image.blend(Image.new('RGBA', (W, H), BG + (255,)), img, s)
@@ -259,12 +259,12 @@ def body_frame(t, ev):
             d.rectangle([bx - 40, by - 22, bx + cta.width + 40, by + cta.height + 18], fill=rgba(PANEL, a), outline=rgba(SOFT, a), width=3)
             img.alpha_composite(with_alpha(cta, a), (bx, by - 4))
     img.alpha_composite(scaled(LOGO_FULL, CORNER_S), CORNER_XY)
-    s1 = pixel_text(ev.get('stage', 'STAGE 01'), 12, 3, fill=MUTED, shadow=False)
-    img.alpha_composite(s1, (W - 110 - s1.width, 90))
     # 切り替え：境目の前後 WIPE/2 秒で帯が横切る（真ん中でページが入れ替わる）
     for b in bounds(ev):
         if abs(t - b) < WIPE / 2: wipe(img, (t - b) / WIPE + .5)
-    marquee(img, t + OP_DUR, 1); corners(img, 1)
+    hud(img, t + OP_DUR, 1, label=f"{ev.get('prefix', 'PG')} // {ev.get('stage', 'STAGE 01')}")
+    for b in bounds(ev):
+        if 0 < t - b - WIPE / 2 < .22: img = glitch(img, 1 - (t - b - WIPE / 2) / .22, int(t * 30))
     img = finish(img, t)
     e = prog(t, body_dur(ev) - .4, body_dur(ev))
     if e > 0: img = Image.blend(img, Image.new('RGBA', (W, H), BG + (255,)), e)
