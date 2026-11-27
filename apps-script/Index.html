@@ -144,7 +144,7 @@ button:disabled{opacity:.5;cursor:wait}
           <div class="tplrow"><span class="hint">ゲーム別の見本：</span>
             <button type="button" class="tplbtn" data-f="valoTeam">VALORANT 5人＋補欠</button>
             <button type="button" class="tplbtn" data-f="apexTeam">Apex 3人</button>
-            <button type="button" class="tplbtn" data-f="owTeam">OW2 5人＋補欠</button>
+            <button type="button" class="tplbtn" data-f="owTeam">OW 5人＋補欠</button>
             <button type="button" class="tplbtn" data-f="solo">個人（ドラフトなど）</button>
           </div>
           <div class="grid" style="margin-top:8px">
@@ -191,7 +191,7 @@ button:disabled{opacity:.5;cursor:wait}
   </form>
   </div>
   <datalist id="units"><option>チーム（5人）</option><option>部隊（3人）</option><option>個人</option><option>ペア（2人）</option></datalist>
-  <datalist id="games"><option>VALORANT</option><option>OW2</option><option>Apex</option><option>Minecraft</option><option>複数タイトル</option></datalist>
+  <datalist id="games"><option>VALORANT</option><option>OW</option><option>Apex</option><option>Minecraft</option><option>複数タイトル</option></datalist>
 </main>
 <script>
 const $ = (s) => document.querySelector(s);
@@ -269,7 +269,7 @@ async function load(selectRow) {
     pick.length = 1;
     for (const e of events) pick.add(new Option(label(e), e.row));
     pick.value = selectRow ? String(selectRow) : '';
-    const games = new Set(['VALORANT', 'OW2', 'Apex', 'Minecraft']);
+    const games = new Set(['VALORANT', 'OW', 'Apex', 'Minecraft']);
     for (const e of events) for (const g of gameList(e['ゲーム'])) if (!VAGUE.test(g)) games.add(g);
     $('#games').innerHTML = '';
     for (const g of games) $('#games').append(new Option(g));

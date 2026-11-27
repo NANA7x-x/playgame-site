@@ -693,7 +693,7 @@ const btn = (l, cls) => l.url ? `<a class="btn ${cls}"${ext(l.url)}>${esc(l.titl
 /* ---------- render content ---------- */
 $("#aboutText").innerHTML = SITE.about.map((p) => `<p>${esc(p)}</p>`).join("");
 $("#aboutBtns").innerHTML = btn(L.discord, "") + btn(L.x, "alt");
-const GC = { "VALORANT": "var(--pink)", "OW2": "var(--cyan)", "Apex": "var(--mint)", "Minecraft": "#7dff6a" };
+const GC = { "VALORANT": "var(--pink)", "OW": "var(--cyan)", "Apex": "var(--mint)", "Minecraft": "#7dff6a" };
 const today = new Date();
 const EV = SITE.events;
 EV.forEach((e, i) => { e.id = e.id || `ev-${e.month}-${i}`; });
@@ -732,7 +732,7 @@ const tentChip = (e) => fixed(e) ? "" : '<span class="tent">確定前</span>';
 const stChip = (st) => st ? `<span class="stc" style="--s:${SC[st] || "var(--violet)"}">${esc(st)}</span>` : "";
 const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sort((a, b) => a.d < b.d ? -1 : 1)[0];
 const nextMonth = nextEv ? nextEv.month : null;
-const GLIST = ["VALORANT", "OW2", "Apex"];
+const GLIST = ["VALORANT", "OW", "Apex"];
 EV.forEach((e) => e.games.forEach((g) => { if (!GLIST.includes(g)) GLIST.push(g); }));
 let fPast = false, fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
 // 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
