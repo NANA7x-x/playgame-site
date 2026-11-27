@@ -11,6 +11,12 @@ const SECRET = 'ここに合言葉';   // ← NANA Support の「参加記録 �
 const SHEET_ID = '1LB24cc6LTDr2vjWspo_GD8tI6QsYJ1Y7x2V4LCLdo_0';
 const TAB = '参加記録';
 const SUM_TAB = '参加回数';
+const HEAD = ['キー', '日付', 'イベント名', 'イベントID', 'ユーザーID', '名前', '申込', 'チーム', 'VC（分）', 'チェックイン', '状態'];
+
+/** 最初に1回だけ ▶実行：スプレッドシートを使う許可を出して、「参加記録」「参加回数」タブを作る */
+function setup() {
+  ensure_(SpreadsheetApp.openById(SHEET_ID), HEAD);
+}
 
 function doGet() {
   return ContentService.createTextOutput('PG 参加記録の受け口です（NANA Support から使います）');

@@ -13,7 +13,7 @@ NANA Support が記録した「だれがどのイベントに出席・欠席し�
 イベント登録ページとは **別のプロジェクト** にします。
 
 1. https://script.google.com を開いて **新しいプロジェクト**（名前は「PG 参加記録」など）
-2. `コード.gs` の中身を全部消して、[Code.gs の中身](https://raw.githubusercontent.com/NANA7x-x/playgame-site/main/apps-script/attendance/Code.gs) を貼り付け → 💾 保存
+2. `コード.gs` の中身を全部消して、[Code.gs の中身](https://raw.githubusercontent.com/NANA7x-x/playgame-site/main/apps-script/attendance/Code.gs) を貼り付け → 💾 保存 → 上の関数を `setup` にして ▶ 実行（スプレッドシートを使う許可が出るので許可する）
 3. **デプロイ → 新しいデプロイ** → 種類 **ウェブアプリ** → 実行するユーザー **自分** → アクセスできるユーザー **全員** → **デプロイ**
 4. 承認（「確認されていません」と出たら **詳細 → 移動 → 許可**）
 5. 出てきた **ウェブアプリのURL** をコピー
