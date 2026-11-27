@@ -222,6 +222,9 @@ ul.dl{margin:0;padding-left:1.2em;display:grid;gap:6px}
 
 h2{display:flex;width:fit-content;max-width:100%;align-items:center;background:#0b0814eb;border:2px solid var(--line);border-radius:12px;padding:10px 18px;box-shadow:4px 4px 0 #000;margin-bottom:14px}
 .sh{width:100%;background:#0b0814eb;border:2px solid var(--line);border-radius:10px;padding:8px 14px;box-shadow:3px 3px 0 #000}
+.doc{max-width:860px}.doc h3.sh{margin:26px 0 12px}.doc h3.sh:first-of-type{margin-top:0}
+.doc ul{margin:0 0 8px;padding-left:1.4em;line-height:1.95}.doc li{margin:2px 0}.doc p{margin:0 0 10px;line-height:1.9}
+.doc .note{color:var(--muted);font-size:.88em;margin:6px 0 0}.doc b{color:var(--ink,#fff)}
 .lead{display:block;width:fit-content;max-width:100%;background:#0b0814d9;border-radius:8px;padding:6px 12px}
 .aboutbox{background:#0b0814d9;border:2px solid var(--line);border-radius:14px;padding:clamp(16px,3vw,26px);box-shadow:5px 5px 0 #0008}
 ul.news{background:#0b0814d9;border:2px solid var(--line);border-radius:12px;padding:0 14px}
@@ -500,6 +503,8 @@ html[data-theme=light] .btn.alt,html[data-theme=light] .btn.alt:hover{color:var(
       <a href="#about" class="px">トップ</a>
       <a href="#events" class="px">イベント情報</a>
       <a href="#archive" class="px">過去のイベント</a>
+      <a href="#guide" class="px">参加の注意</a>
+      <a href="#partner" class="px">提携・宣伝</a>
     </nav>
     <button type="button" class="themebtn" id="themeBtn" aria-label="ライトモードに切り替え" title="ライト／ダークの切り替え">☀</button>
   </div>
@@ -554,6 +559,65 @@ html[data-theme=light] .btn.alt,html[data-theme=light] .btn.alt:hover{color:var(
     <h2 class="st"><span class="ic" style="--c:var(--mint)"></span>過去のイベント</h2>
     <p class="lead st">これまでのイベントの記録と結果を残していきます。</p>
     <div class="grid st" id="arch" style="animation-delay:.08s"></div>
+  </section>
+
+  <section class="page" id="guide" aria-label="参加する皆さまへの注意事項">
+    <h2 class="st"><span class="ic" style="--c:var(--pink)"></span>参加する皆さまへの注意事項（配信について）</h2>
+    <div class="st aboutbox doc">
+      <p>PGのイベントには、配信している人も配信していない人も一緒に参加しています🎮<br><b>配信していない人も参加OK</b>ですが、次のことをご了承ください🙏</p>
+      <h3 class="sh"><span class="ic" style="--c:var(--cyan)"></span>📺 ほかの人の配信に映る・入る可能性があるもの</h3>
+      <ul>
+        <li>🎙 <b>ボイスチャットの声</b>（同じVCにいる配信者の配信に入ります）</li>
+        <li>🕹 <b>ゲーム内の名前・プレイ画面</b>（同じ試合・同じチームになった場合）</li>
+        <li>💬 <b>Discordの名前・アイコン・チャット</b>（画面に映っている場合）</li>
+      </ul>
+      <p class="note">配信のアーカイブや切り抜きとして残ることもあります</p>
+      <h3 class="sh"><span class="ic" style="--c:var(--mint)"></span>🙋 声や名前を出したくない人へ</h3>
+      <ul>
+        <li>参加前に <b>「声NG」「名前NG」ロールを必ずつけてください</b>。配信者に共有します</li>
+        <li>声を入れたくない場合は、<b>聞き専（ミュート）での参加もOK</b>です</li>
+        <li>ゲーム内の名前が気になる場合は、ゲーム内の名前を変えて参加するのがおすすめです</li>
+      </ul>
+      <p class="note">完全に映らないようにすることはできないので、心配な場合は運営に相談してください</p>
+      <h3 class="sh"><span class="ic" style="--c:var(--violet)"></span>🎥 配信する人へのお願い</h3>
+      <ul>
+        <li><b>遅延（1〜2分以上）をかけて</b>配信してください（ゴースティング対策）</li>
+        <li>声NG・名前NGの人がいたら、ミュートや画面の調整など配慮をお願いします</li>
+        <li>ほかの参加者の個人情報（本名・顔・住所など）が映らないように気をつけてください</li>
+        <li>試合中に<b>ほかの人の配信を見るのは禁止</b>です（ゴースティング）</li>
+      </ul>
+      <p class="note">イベントに参加した時点で、上の内容に同意したものとさせていただきます<br>💬 わからないことや心配なことは、お気軽に運営まで！</p>
+    </div>
+  </section>
+
+  <section class="page" id="partner" aria-label="提携・宣伝について">
+    <h2 class="st"><span class="ic" style="--c:var(--mint)"></span>提携・宣伝について</h2>
+    <div class="st aboutbox doc">
+      <p>PLAY GAMEでは、ほかのサーバーさんとの提携を受け付けています！<br>一緒にゲームの輪を広げていけたらうれしいです🎮</p>
+      <h3 class="sh"><span class="ic" style="--c:var(--cyan)"></span>🙆 こんなサーバーさん大歓迎</h3>
+      <ul>
+        <li>ゲーム系のコミュニティ（VALORANT／Apex／OW などFPS系はとくに✨）</li>
+        <li>大会やイベントをひらいているサーバー</li>
+        <li>配信者さんのコミュニティ</li>
+      </ul>
+      <h3 class="sh"><span class="ic" style="--c:var(--pink)"></span>🎁 提携するとできること</h3>
+      <ul>
+        <li><b>イベント告知のお届け</b>：PGのDiscordの「イベント情報」チャンネルをフォローすると、PGの大会・イベントのお知らせがそちらのサーバーにも自動で届きます</li>
+        <li><b>相互告知</b>：お互いの大会やイベントを紹介し合えます</li>
+        <li><b>合同イベント</b>：両サーバーのメンバーで遊べる交流会・カスタムも相談OK（部屋立てなどの運営はPGでも担当できます）</li>
+        <li><b>提携サーバー紹介</b>：PGのDiscordの提携サーバーのフォーラムに、サーバーの紹介を載せます</li>
+      </ul>
+      <h3 class="sh"><span class="ic" style="--c:var(--violet)"></span>📩 申し込み方法</h3>
+      <p>PGのDiscordの「お問い合わせ」から「提携の相談」で連絡してください。</p>
+      <p class="note">サーバー名・招待リンク・どんなサーバーか（ひとことでOK）を教えてもらえるとスムーズです</p>
+      <h3 class="sh"><span class="ic" style="--c:var(--yellow,#ffd84a)"></span>⚠ 宣伝のルール</h3>
+      <ul>
+        <li>提携していないサーバーやSNSの宣伝・招待リンクの投稿は、運営の許可なくしないでください</li>
+        <li>メンバーへの宣伝DMは禁止です（見つけた場合は対応します）</li>
+        <li>成人向け・荒らし・規約違反のサーバーとは提携できません</li>
+      </ul>
+      <p class="note">内容によってはお断りすることもあります。ご了承ください🙏</p>
+    </div>
   </section>
 </main>
 <footer><span class="px">© PLAY GAME</span><span id="updated"></span></footer>
@@ -777,7 +841,7 @@ const renderDetail = (e) => {
         ${row("ゲーム", esc(e.games.join("／") || "—"))}${row("内容", rich(e.detail))}${row("定員", esc(e.capacity || ""))}${row("備考", e.note ? rich(e.note) : "")}
       </dl></div>
       <div class="card st c-ap" style="animation-delay:.12s"><h3>募集</h3><dl class="spec">
-        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc((e.period || "").replace(/\s*[-〜～~]\s*(?=\d{4}\/)/, " 〜 ")))}${row("参加方法", esc(e.apply || ""))}
+        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc((e.period || "").replace(/\s*[-〜～~]\s*(?=\d{4}\/)/, " 〜 ")))}${row("参加方法", esc(e.apply || ""))}${row("配信について", '<a href="#guide">参加する皆さまへの注意事項 ▶</a>')}
       </dl></div>
       ${e.conditions && e.conditions.length ? `<div class="card st c-cd" style="animation-delay:.18s"><h3>応募条件</h3>${list(e.conditions)}</div>` : ""}${e.rules && e.rules.length ? `<div class="card st c-rl" style="animation-delay:.22s"><h3>ルール</h3>${list(e.rules)}</div>` : ""}
       ${(e.links || []).some((l) => l.url) ? `<div class="dlinks st">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div>` : ""}
@@ -808,7 +872,7 @@ const roBar = new ResizeObserver(setHH); roBar.observe(bar);
 
 
 /* ---------- pages + pixel wipe ---------- */
-const PAGES = ["about", "events", "archive"];
+const PAGES = ["about", "events", "archive", "guide", "partner"];
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wipe = $("#wipe");
 const WC = 12;
