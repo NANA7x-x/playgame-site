@@ -666,7 +666,7 @@ const loadSheet = async () => {
     const d = ymd(r["日付"]);
     return { month: ym(r["月"]) || (d ? d.slice(0, 7) : ""), d, date: r["日時"] || (d ? d.replace(/-/g, "/") : "日程調整中"),
       type: r["種類"] || "メイン", game: r["ゲーム"], name: r["イベント名"] || "イベント名未定", detail: r["詳細"] || "未定",
-      confirmed: /^(済|確定|○|◯|TRUE|true|yes|1)$/.test(r["確定"] || ""), status: r["募集状況"] || "調整中", period: r["募集期間"], open: r["募集開始"] || "", close: r["募集締切"] || "", capacity: r["定員"], conditions: lines(r["応募条件"]), apply: r["参加方法"],
+      confirmed: /^(済|確定|○|◯|TRUE|true|yes|1)$/.test(r["確定"] || ""), status: r["募集状況"] || "調整中", period: r["募集期間"], open: r["募集開始"] || "", close: r["募集締切"] || "", capacity: r["定員"], conditions: lines(r["応募条件"]), apply: r["参加方法"], staffRoles: r["運営の役割"] || "", staffOpen: r["運営募集開始"] || "", staffClose: r["運営募集締切"] || "",
       rules: lines(r["ルール"]), note: r["備考"], kind: r["形式"] || "", who: r["対象"] || "", image: /^https:\/\/\S+$/.test(r["画像"] || "") ? r["画像"] : "", links: r["リンクURL"] ? [{ label: r["リンク名"] || "くわしく", url: r["リンクURL"] }] : [] };
   }).filter((e) => e.month);
   if (nw) window.SITE.news = nw.map((r) => ({ date: r["日付"], tag: r["タグ"], title: r["タイトル"], url: r["URL"] })).filter((n) => n.title);
@@ -733,6 +733,8 @@ const stChip = (st) => st ? `<span class="stc" style="--s:${SC[st] || "var(--vio
 const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sort((a, b) => a.d < b.d ? -1 : 1)[0];
 const nextMonth = nextEv ? nextEv.month : null;
 const GLIST = ["VALORANT", "OW", "Apex"];
+/* 「2026-12-01 21:00」→「12/1 21:00」（運営募集の期間を短く出す） */
+const md = v => { const m = String(v || "").match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[ T](\d{1,2}:\d{2}))?/); return m ? `${+m[2]}/${+m[3]}${m[4] ? " " + m[4] : ""}` : String(v || ""); };
 EV.forEach((e) => e.games.forEach((g) => { if (!GLIST.includes(g)) GLIST.push(g); }));
 let fPast = false, fGame = "", fK = "", fT = "", fQ = "", fY = "", fD1 = "", fD2 = "";
 // 日付がないイベント（日程調整中）は、その月が期間に重なっていれば表示する
@@ -841,7 +843,7 @@ const renderDetail = (e) => {
         ${row("ゲーム", esc(e.games.join("／") || "—"))}${row("内容", rich(e.detail))}${row("定員", esc(e.capacity || ""))}${row("備考", e.note ? rich(e.note) : "")}
       </dl></div>
       <div class="card st c-ap" style="animation-delay:.12s"><h3>募集</h3><dl class="spec">
-        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc((e.period || "").replace(/\s*[-〜～~]\s*(?=\d{4}\/)/, " 〜 ")))}${row("参加方法", esc(e.apply || ""))}${row("配信について", '<a href="#guide">参加する皆さまへの注意事項 ▶</a>')}
+        ${row("募集状況", stChip(e.status || "調整中"))}${row("募集期間", esc((e.period || "").replace(/\s*[-〜～~]\s*(?=\d{4}\/)/, " 〜 ")))}${row("参加方法", esc(e.apply || ""))}${(e.staffRoles || e.staffOpen) ? row("運営スタッフ募集", esc([e.staffRoles, (e.staffOpen || e.staffClose) ? `募集期間：${md(e.staffOpen)}〜${md(e.staffClose)}` : "", "DiscordのPGサーバーの告知から応募できます"].filter(Boolean).join("　"))) : ""}${row("配信について", '<a href="#guide">参加する皆さまへの注意事項 ▶</a>')}
       </dl></div>
       ${e.conditions && e.conditions.length ? `<div class="card st c-cd" style="animation-delay:.18s"><h3>応募条件</h3>${list(e.conditions)}</div>` : ""}${e.rules && e.rules.length ? `<div class="card st c-rl" style="animation-delay:.22s"><h3>ルール</h3>${list(e.rules)}</div>` : ""}
       ${(e.links || []).some((l) => l.url) ? `<div class="dlinks st">${(e.links || []).filter((l) => l.url).map((l) => `<a class="btn"${ext(l.url)}>${esc(l.label)}</a>`).join("")}</div>` : ""}
