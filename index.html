@@ -727,8 +727,11 @@ EV.forEach((e) => {
   e.status = open != null && now < open ? "募集前" : close == null || now < close ? "募集中" : "締切";
 });
 const SC = { "募集中": "var(--mint)", "募集前": "var(--cyan)", "締切": "var(--pink)", "開催終了": "#8a7cc0", "調整中": "#8a7cc0" };
-const fixed = (e) => e.confirmed === true;
-const tentChip = (e) => fixed(e) ? "" : '<span class="tent">確定前</span>';
+/* 「◯月の企画」をDiscordに出す日（前の月の20日）を過ぎたら確定扱い。それまでは「予定」 */
+const FIX_DAY = 20;
+const fixDate = (e) => { const m = /^(\d{4})-(\d{2})/.exec(e.month || ""); if (!m) return ""; let y = +m[1], mo = +m[2] - 1; if (mo === 0) { y--; mo = 12; } return `${y}-${String(mo).padStart(2, "0")}-${FIX_DAY}`; };
+const fixed = (e) => e.confirmed === true || (!!fixDate(e) && todayStr >= fixDate(e));
+const tentChip = (e) => fixed(e) ? "" : '<span class="tent">予定</span>';
 const stChip = (st) => st ? `<span class="stc" style="--s:${SC[st] || "var(--violet)"}">${esc(st)}</span>` : "";
 const nextEv = EV.filter((e) => e.d && new Date(e.d + "T23:59:59") >= today).sort((a, b) => a.d < b.d ? -1 : 1)[0];
 const nextMonth = nextEv ? nextEv.month : null;
@@ -876,7 +879,7 @@ $("#linkList").innerHTML = Object.values(L).map((l, i) => `
     <span class="t">${esc(l.title)}</span><span class="s">${esc(l.sub)}</span><span class="go">${l.url ? "ひらく ▶" : "準備中"}</span></a>`).join("");
 $("#updated").textContent = "最終更新 " + SITE.updated + "　・　更新はイベントの節目ごと";
 const tw = ["PLAY GAME", "プレイゲーム"];
-if (nextEv) tw.push(`NEXT ▶ ${nextEv.date} ${nextEv.name}${fixed(nextEv) ? "" : "（確定前）"}`);
+if (nextEv) tw.push(`NEXT ▶ ${nextEv.date} ${nextEv.name}${fixed(nextEv) ? "" : "（予定）"}`);
 tw.push("イベント情報は月ごとにチェック", "告知はXで", "PRESS START", "GG");
 const tkHalf = `<span>${tw.map(esc).join("　✦　")}　✦</span>`;
 $("#tk").innerHTML = tkHalf + tkHalf;

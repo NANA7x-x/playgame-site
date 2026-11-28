@@ -18,7 +18,7 @@ window.SITE = {
   // date: 日時 / name: 名前 / detail: 詳細 / note: 備考（ルールなど・空なら非表示）
   // links: 備考に出すボタン 例 [{ label: "くわしく", url: "https://..." }]
   // d: 日付（YYYY-MM-DD）を入れたイベントは NEXT の判定に使われます
-  // confirmed: true にすると「確定前」の表示が消えます（未記入は確定前）
+  // 「予定」の表示は、前の月の20日（Discordに「◯月の企画」が出る日）を過ぎると自動で消えます
   // ↓ 詳細ページ用（あるものだけ表示）
   // status: 募集状況（募集前 / 募集中 / 締切 / 開催終了 / 調整中）
   // period: 募集期間 / capacity: 定員 / conditions: 応募条件（リスト）
