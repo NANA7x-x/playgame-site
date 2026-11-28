@@ -856,7 +856,21 @@ $("#arch").innerHTML = SITE.archive.length ? SITE.archive.map((a) => `
     <ol>${a.results.map(([r, n], i) => `<li><span class="rk" style="--c:${COLS[i % 4]}">${esc(r)}</span>${esc(n)}</li>`).join("")}</ol>
     ${a.note ? `<p class="note">${esc(a.note)}</p>` : ""}${a.url ? `<a class="px"${ext(a.url)}>くわしく ▶</a>` : ""}</article>`).join("")
   : `<div class="empty"><b>NO DATA</b>イベントが終わったら、ここに記録と結果が載ります。</div>`;
-$("#newsList").innerHTML = SITE.news.map((n) => `<li><time>${esc(n.date)}</time><span>${n.url ? `<a${ext(n.url)}>${esc(n.title)}</a>` : esc(n.title)}</span><span class="tg">${esc(n.tag)}</span></li>`).join("");
+/* お知らせ：シートの「お知らせ」タブに加えて、「募集開始」「運営募集開始」の日が来たイベントを自動で載せる */
+const autoNews = [];
+EV.filter((e) => !/未定/.test(e.name)).forEach((e) => {
+  const o = ymd(e.open);
+  if (o && o <= todayStr) autoNews.push({ date: o.replace(/-/g, "."), tag: "募集開始", title: `「${e.name}」の参加募集を開始しました！`, href: `#${e.id}` });
+});
+const staffDays = {};
+EV.filter((e) => !/未定/.test(e.name)).forEach((e) => { const o = ymd(e.staffOpen); if (o && o <= todayStr) (staffDays[o] = staffDays[o] || []).push(e); });
+Object.entries(staffDays).forEach(([o, list]) => {
+  const ms = [...new Set(list.map((e) => Number(e.month.slice(5))))];
+  autoNews.push({ date: o.replace(/-/g, "."), tag: "運営募集", title: `${ms.length === 1 ? ms[0] + "月の" : ""}イベント${list.length}件の運営スタッフ募集を開始しました！Discordの告知から応募できます`, href: list.length === 1 ? `#${list[0].id}` : "#events" });
+});
+const newsKey = (n) => ymd(n.date) || String(n.date || "");
+const NEWS = [...SITE.news, ...autoNews.filter((a) => !SITE.news.some((n) => n.title === a.title))].sort((a, b) => newsKey(b).localeCompare(newsKey(a)));
+$("#newsList").innerHTML = NEWS.map((n) => `<li><time>${esc(n.date)}</time><span>${n.href ? `<a href="${esc(n.href)}">${esc(n.title)}</a>` : n.url ? `<a${ext(n.url)}>${esc(n.title)}</a>` : esc(n.title)}</span><span class="tg">${esc(n.tag)}</span></li>`).join("");
 $("#linkList").innerHTML = Object.values(L).map((l, i) => `
   <a class="card lk${l.url ? "" : " off"}" style="--c:${COLS[i % 4]}"${ext(l.url)}>
     <span class="t">${esc(l.title)}</span><span class="s">${esc(l.sub)}</span><span class="go">${l.url ? "ひらく ▶" : "準備中"}</span></a>`).join("");
